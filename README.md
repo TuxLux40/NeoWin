@@ -19,35 +19,22 @@ A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark vari
 ```bash
 git clone <this-repo> ~/git/win11-kde
 cd ~/git/win11-kde
-./install.sh install          # Install assets and apply dark mode
-./install.sh auto-switch      # Enable auto dark/light (07:00 light, 20:00 dark)
+./install.sh install          # Install assets, apply config, enable auto switching
 ```
 
 ## Commands
 
 ```
-./install.sh install              # Install all assets + apply dark mode
-./install.sh install-light        # Install all assets + apply light mode
-./install.sh switch-dark          # Switch to dark mode
-./install.sh switch-light         # Switch to light mode
+./install.sh install              # Install all assets + configure KDE
 ./install.sh restore-panel        # Restore the saved panel layout
-./install.sh auto-switch [L] [D]  # Auto-switch (L=light hour, D=dark hour)
 ./install.sh uninstall            # Remove everything
 ```
 
 ## Auto Dark/Light Switching
 
-The `auto-switch` command creates systemd user timers that automatically switch between light and dark mode:
+The installer enables KDE's built-in `AutomaticLookAndFeel` feature, which automatically switches between the dark and light variants. You can adjust the schedule in:
 
-```bash
-./install.sh auto-switch          # Default: light at 07:00, dark at 20:00
-./install.sh auto-switch 08 21    # Custom: light at 08:00, dark at 21:00
-```
-
-Check timer status:
-```bash
-systemctl --user list-timers 'win11-kde-*'
-```
+**System Settings → Colors & Themes → Behavior**
 
 ## Panel Layout
 
