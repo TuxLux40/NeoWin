@@ -10,7 +10,7 @@ A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark vari
 | **Icons** | Win11-KDE (single theme, adapts via color scheme) | ← same |
 | **Application Style** | Breeze | Breeze |
 | **Plasma Style** | Utterly-Round (transparent + blur, follows color scheme) | ← same |
-| **Color Scheme** | Win11 KDE Dark (WillowDarkBlur) | Win11 KDE Light (WillowLightBlur) |
+| **Color Scheme** | WillowDarkBlur | WillowLightBlur |
 | **Cursors** | WinSur Dark | WinSur White |
 | **Splash Screen** | None | None |
 
