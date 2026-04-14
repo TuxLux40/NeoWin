@@ -1,0 +1,8 @@
+[Sound Theme]
+Name=Win11-KDE
+Comment=Windows 11 sound theme for KDE
+Directories=stereo
+Inherits=freedesktop
+
+[stereo]
+OutputProfile=stereo

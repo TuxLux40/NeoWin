@@ -12,6 +12,7 @@ PLASMA_THEME_DIR="${HOME}/.local/share/plasma/desktoptheme"
 COLOR_DIR="${HOME}/.local/share/color-schemes"
 LAF_DIR="${HOME}/.local/share/plasma/look-and-feel"
 CURSOR_DIR="${HOME}/.local/share/icons"
+SOUND_DIR="${HOME}/.local/share/sounds"
 
 # Colors for output
 RED='\033[0;31m'
@@ -85,6 +86,13 @@ install_assets() {
     cp -a "${SCRIPT_DIR}/look-and-feel/win11-kde-light" "${LAF_DIR}/"
     ok "Look-and-feel packages installed"
 
+    # Sound theme
+    info "Installing Win11-KDE sound theme..."
+    mkdir -p "${SOUND_DIR}"
+    rm -rf "${SOUND_DIR}/win11-kde"
+    cp -a "${SCRIPT_DIR}/sounds/win11-kde" "${SOUND_DIR}/win11-kde"
+    ok "Sound theme installed"
+
     # Refresh icon cache
     info "Refreshing KDE caches..."
     if command -v kbuildsycoca6 &>/dev/null; then
@@ -140,6 +148,8 @@ apply_config() {
     $kw --file kwinrc --group Effect-blur --key BlurStrength "13"
     # Night Color
     $kw --file kwinrc --group NightColor --key Active --type bool true
+    # Sound theme
+    $kw --file kdeglobals --group Sounds --key Theme "win11-kde"
 
     # Notify KWin to reload
     if command -v qdbus6 &>/dev/null; then
@@ -177,6 +187,7 @@ uninstall() {
     rm -rf "${PLASMA_THEME_DIR}/Utterly-Round"
     rm -f "${COLOR_DIR}/Win11KDEDark.colors" "${COLOR_DIR}/Win11KDELight.colors"
     rm -rf "${LAF_DIR}/win11-kde-dark" "${LAF_DIR}/win11-kde-light"
+    rm -rf "${SOUND_DIR}/win11-kde"
 
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true

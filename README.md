@@ -12,6 +12,7 @@ A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark vari
 | **Plasma Style** | Utterly-Round (transparent + blur, follows color scheme) | ← same |
 | **Color Scheme** | WillowDarkBlur | WillowLightBlur |
 | **Cursors** | WinSur Dark | WinSur White |
+| **Sound Theme** | Win11-KDE (Windows 11 sounds, all 44 freedesktop events) | ← same |
 | **Splash Screen** | None | None |
 
 ## Quick Start
