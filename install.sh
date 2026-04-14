@@ -178,6 +178,32 @@ restore_panel() {
     fi
 }
 
+wallpaper() {
+    local provider="${1:-bing}"
+    local qd=""
+    if command -v qdbus6 &>/dev/null; then
+        qd="qdbus6"
+    elif command -v qdbus &>/dev/null; then
+        qd="qdbus"
+    else
+        error "qdbus not found — cannot talk to plasmashell"
+        return 1
+    fi
+
+    info "Setting wallpaper to Picture of the Day (provider: ${provider})..."
+    $qd org.kde.plasmashell /PlasmaShell evaluateScript "
+        var allDesktops = desktops();
+        for (i = 0; i < allDesktops.length; i++) {
+            d = allDesktops[i];
+            d.wallpaperPlugin = 'org.kde.potd';
+            d.currentConfigGroup = ['Wallpaper', 'org.kde.potd', 'General'];
+            d.writeConfig('Provider', '${provider}');
+            d.reloadConfig();
+        }
+    " 2>/dev/null || { error "plasmashell script failed — is Plasma running?"; return 1; }
+    ok "Wallpaper set to ${provider} POTD on all desktops"
+}
+
 sounds() {
     local pack="${1:-}"
 
@@ -270,12 +296,15 @@ Usage: $(basename "$0") <command>
 Commands:
   install              Install all theme assets, apply config, enable auto dark/light
   restore-panel        Restore saved panel layout
+  wallpaper [provider] Set Picture of the Day wallpaper on all desktops (default: bing)
   sounds [pack]        List or switch sound packs (win11, win10, win7, winxp)
   uninstall            Remove all installed theme assets
   help                 Show this help message
 
 Examples:
   $(basename "$0") install              # Install everything and configure KDE
+  $(basename "$0") wallpaper            # Bing Picture of the Day on all desktops
+  $(basename "$0") wallpaper apod       # NASA APOD instead
   $(basename "$0") sounds               # List available sound packs
   $(basename "$0") sounds win7 Sonata   # Switch to Win7 Sonata sounds
   $(basename "$0") restore-panel        # Restore the saved panel layout
@@ -297,6 +326,9 @@ case "${1:-help}" in
         ;;
     restore-panel)
         restore_panel
+        ;;
+    wallpaper)
+        wallpaper "${2:-}"
         ;;
     sounds)
         sounds "${2:-}" "${3:-}"

@@ -53,6 +53,8 @@ cd ~/git/NeoWin
 ./install.sh install              # Install all assets + configure KDE
 ./install.sh sounds               # List available sound packs
 ./install.sh sounds win7 Sonata   # Switch to Win7 Sonata sounds
+./install.sh wallpaper            # Bing Picture of the Day on all desktops
+./install.sh wallpaper apod       # NASA APOD (or: unsplash, wcpotd, noaa, flickr)
 ./install.sh restore-panel        # Restore the saved panel layout
 ./install.sh uninstall            # Remove everything
 ```
