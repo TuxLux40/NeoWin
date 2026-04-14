@@ -74,8 +74,8 @@ install_assets() {
     # Color schemes
     info "Installing color schemes..."
     mkdir -p "${COLOR_DIR}"
-    cp -f "${SCRIPT_DIR}/color-schemes/Win11KDEDark.colors" "${COLOR_DIR}/"
-    cp -f "${SCRIPT_DIR}/color-schemes/Win11KDELight.colors" "${COLOR_DIR}/"
+    cp -f "${SCRIPT_DIR}/color-schemes/NeoWinDark.colors" "${COLOR_DIR}/"
+    cp -f "${SCRIPT_DIR}/color-schemes/NeoWinLight.colors" "${COLOR_DIR}/"
     ok "Color schemes installed"
 
     # Look-and-feel packages
@@ -247,7 +247,7 @@ uninstall() {
     done
     rm -rf "${CURSOR_DIR}/WinSur-dark-cursors" "${CURSOR_DIR}/WinSur-white-cursors"
     rm -rf "${PLASMA_THEME_DIR}/Utterly-Round"
-    rm -f "${COLOR_DIR}/Win11KDEDark.colors" "${COLOR_DIR}/Win11KDELight.colors"
+    rm -f "${COLOR_DIR}/NeoWinDark.colors" "${COLOR_DIR}/NeoWinLight.colors"
     rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
     rm -rf "${SOUND_DIR}/neowin"
 

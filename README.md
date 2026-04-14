@@ -10,7 +10,7 @@ A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark vari
 | **Icons** | NeoWin (single theme, adapts via color scheme) | ← same |
 | **Application Style** | Breeze | Breeze |
 | **Plasma Style** | Utterly-Round (transparent + blur, follows color scheme) | ← same |
-| **Color Scheme** | WillowDarkBlur | WillowLightBlur |
+| **Color Scheme** | NeoWin Dark | NeoWin Light |
 | **Cursors** | WinSur Dark | WinSur White |
 | **Sound Theme** | Win11 (default), Win10, Win7, WinXP available | ← same |
 | **Splash Screen** | None | None |
@@ -83,9 +83,11 @@ The NeoWin icon theme is based on [Windows-Eleven](https://github.com/ArcticLing
 
 ## Requirements
 
-- KDE Plasma 6
+- KDE Plasma 6 (Qt 6 / KF6)
 - Wayland or X11
-- `kwriteconfig6` and `lookandfeeltool` (included with Plasma)
+- `kwriteconfig6`, `kbuildsycoca6`, `lookandfeeltool` (or `plasma-apply-lookandfeel`), `qdbus6` — all shipped with Plasma 6
+
+The installer automatically falls back to KF5 equivalents (`kwriteconfig5`, `kbuildsycoca5`, `qdbus`) if the KF6 tools are missing, so it also runs on Plasma 5 systems.
 
 ## Credits
 

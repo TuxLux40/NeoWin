@@ -1,4 +1,6 @@
-# NeoWin — Project Context
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What This Is
 
@@ -11,6 +13,61 @@ NeoWin is a self-contained KDE Plasma 6 theme repository that replicates a Windo
 - **Shell**: fish
 - **Monitors**: 3 screens
 - **Repo location**: `~/git/NeoWin/`
+
+## Commands
+
+All operations go through `./install.sh` (bash, `set -euo pipefail`). No build system, no tests, no linter.
+
+```bash
+./install.sh install              # Copy assets to ~/.local/share + apply KDE config
+./install.sh uninstall            # Remove all installed assets
+./install.sh sounds               # List sound packs
+./install.sh sounds win11         # Switch to Win11 sounds (default)
+./install.sh sounds win10         # Switch to Win10 sounds
+./install.sh sounds win7 Sonata   # Switch to Win7 sub-scheme (default sub-scheme: Sonata)
+./install.sh sounds winxp         # Switch to WinXP sounds
+./install.sh restore-panel        # Copy panel-layout/ over ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+./install.sh help
+```
+
+After `restore-panel`, Plasma shell must restart:
+```bash
+kquitapp6 plasmashell && kstart plasmashell
+```
+
+To force-refresh caches / reload KWin manually:
+```bash
+kbuildsycoca6 --noincremental
+qdbus6 org.kde.KWin /KWin reconfigure
+```
+
+## Installer Internals
+
+`install.sh` has four functions: `install_assets`, `apply_config`, `sounds`, `restore_panel`, `uninstall`.
+
+**`install_assets`** copies into XDG dirs:
+- `icons/win11-kde/` → `~/.local/share/icons/NeoWin` (on-disk dir renamed during copy; source dir keeps legacy name)
+- `aurorae/Willow{Dark,Light}Blur{,Alt}/` → `~/.local/share/aurorae/themes/`
+- `cursors/WinSur-{dark,white}-cursors/` → `~/.local/share/icons/`
+- `plasma-theme/Utterly-Round` → `~/.local/share/plasma/desktoptheme/`
+- `color-schemes/NeoWin{Dark,Light}.colors` → `~/.local/share/color-schemes/`
+- `look-and-feel/neowin-{dark,light}/` → `~/.local/share/plasma/look-and-feel/`
+- `sounds/win11-kde/` → `~/.local/share/sounds/neowin` (sound theme dir is always `neowin`, content swapped by `sounds` command)
+- Runs `kbuildsycoca6 --noincremental` at the end.
+
+**`apply_config`** writes via `kwriteconfig6` (falls back to `kwriteconfig5`):
+- `kdeglobals [KDE] AutomaticLookAndFeel=true`, `DefaultDarkLookAndFeel=neowin-dark`, `DefaultLightLookAndFeel=neowin-light`
+- `kdeglobals [Icons] Theme=NeoWin`, `[KDE] widgetStyle=Breeze`, `[Sounds] Theme=neowin`
+- `kwinrc [org.kde.kdecoration2] library=org.kde.kwin.aurorae.v2`, `theme=__aurorae__svg__WillowDarkBlur`, `BorderSize=NoSides`, `BorderSizeAuto=false`, `ButtonsOnLeft=M`
+- `kwinrc [Plugins] blurEnabled=true`, `[Effect-blur] BlurStrength=13`, `[NightColor] Active=true`
+- `plasmarc [Theme] name=Utterly-Round`
+- `ksplashrc [KSplash] Engine=none`, `Theme=None`
+- Applies dark LAF as active via `lookandfeeltool --apply neowin-dark` (fallback: `plasma-apply-lookandfeel`), then reloads KWin via `qdbus6 org.kde.KWin /KWin reconfigure` (fallback: `qdbus`).
+- The dark window decoration is written directly into `kwinrc`; on light switch KDE overrides it from the `neowin-light` LAF package.
+
+**`sounds <pack> [scheme]`** wipes `~/.local/share/sounds/neowin`, copies `index.theme` + `stereo/` from the chosen source, then `sed`s `Name=...` → `Name=NeoWin` so KDE's sound theme ID stays constant. Invalid pack/scheme prints the available list and exits non-zero.
+
+**`restore_panel`** copies `panel-layout/plasma-org.kde.plasma.desktop-appletsrc` over `~/.config/plasma-org.kde.plasma.desktop-appletsrc`. Not called from `install`.
 
 ## Repo Structure
 
@@ -32,8 +89,8 @@ NeoWin/
 │   └── WinSur-white-cursors/
 ├── plasma-theme/Utterly-Round/ # Plasma desktop theme (blur + transparency)
 ├── color-schemes/              # WillowBlur color schemes
-│   ├── Win11KDEDark.colors     # Name=Win11 KDE Dark (WillowDarkBlur colors)
-│   └── Win11KDELight.colors    # Name=Win11 KDE Light (WillowLightBlur colors)
+│   ├── NeoWinDark.colors       # Name=NeoWin Dark (WillowDarkBlur palette)
+│   └── NeoWinLight.colors      # Name=NeoWin Light (WillowLightBlur palette)
 ├── look-and-feel/              # KDE look-and-feel packages for auto switching
 │   ├── neowin-dark/            # Id=neowin-dark, wires up dark cursor/colors/decoration
 │   └── neowin-light/           # Id=neowin-light, wires up light cursor/colors/decoration
@@ -85,7 +142,7 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 ## Known Quirks / Gotchas
 
 - The icon directory is still named `icons/win11-kde/` on disk (historical artifact), but `index.theme` sets `Name=NeoWin` so KDE sees it as "NeoWin".
-- Color scheme files are named `Win11KDEDark.colors` / `Win11KDELight.colors` — the internal `Name=` field is what KDE displays.
+- Color scheme files: `NeoWinDark.colors` / `NeoWinLight.colors`. Internal `[General] ColorScheme=` key must match the filename stem (that's the ID KDE writes into `kdeglobals`); `Name=` is the display label.
 - Win7 sound pack has 13 sub-schemes (Afternoon, Calligraphy, Characters, Cityscape, Delta, Festival, Garden, Heritage, Landscape, Quirky, Raga, Savanna, Sonata). Each has original `.wav` files plus a `stereo/` dir with freedesktop-mapped names.
 - The repo is ~239MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
@@ -101,7 +158,6 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 ## What Could Be Improved
 
 - Rename `icons/win11-kde/` directory to `icons/neowin/` for consistency (requires re-commit of ~34k files).
-- Rename color scheme files from `Win11KDE*` to `NeoWin*`.
 - Add a `--dry-run` flag to the installer.
 - Add wallpapers (currently not bundled — user uses Bing POTD via KDE widget).
 - GTK theme integration (user has a separate `~/.themes/Windows10` GTK theme that needed fixes).
