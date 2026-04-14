@@ -143,6 +143,8 @@ apply_config() {
     # Splash screen: none
     $kw --file ksplashrc --group KSplash --key Engine "none"
     $kw --file ksplashrc --group KSplash --key Theme "None"
+    # Task switcher (Alt+Tab): cover switch
+    $kw --file kwinrc --group TabBox --key LayoutName "coverswitch"
     # Blur
     $kw --file kwinrc --group Plugins --key blurEnabled --type bool true
     $kw --file kwinrc --group Effect-blur --key BlurStrength "13"

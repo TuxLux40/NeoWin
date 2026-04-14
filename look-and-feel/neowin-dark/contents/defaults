@@ -13,7 +13,7 @@ widgetStyle=Breeze
 [kwinrc][DesktopSwitcher]
 LayoutName=org.kde.breeze.desktop
 
-[kwinrc][WindowSwitcher]
+[kwinrc][TabBox]
 LayoutName=coverswitch
 
 [kwinrc][org.kde.kdecoration2]
