@@ -1,6 +1,6 @@
 [Sound Theme]
-Name=Win11-KDE
-Comment=Windows 11 sound theme for KDE
+Name=NeoWin
+Comment=Windows 11 sound theme for NeoWin KDE
 Directories=stereo
 Inherits=freedesktop
 

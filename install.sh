@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# win11-kde: Windows 11 style KDE Plasma theme installer
+# NeoWin: Windows 11 style KDE Plasma theme installer
 # Uses KDE's built-in AutomaticLookAndFeel for dark/light switching
 set -euo pipefail
 
@@ -38,13 +38,13 @@ find_kwriteconfig() {
 }
 
 install_assets() {
-    info "Installing Win11-KDE theme assets..."
+    info "Installing NeoWin theme assets..."
 
     # Icons
     info "Installing icon theme..."
     mkdir -p "${ICON_DIR}"
-    rm -rf "${ICON_DIR}/Win11-KDE"
-    cp -a "${SCRIPT_DIR}/icons/win11-kde" "${ICON_DIR}/Win11-KDE"
+    rm -rf "${ICON_DIR}/NeoWin"
+    cp -a "${SCRIPT_DIR}/icons/win11-kde" "${ICON_DIR}/NeoWin"
     ok "Icon theme installed"
 
     # Aurorae window decorations
@@ -81,17 +81,17 @@ install_assets() {
     # Look-and-feel packages
     info "Installing look-and-feel packages..."
     mkdir -p "${LAF_DIR}"
-    rm -rf "${LAF_DIR}/win11-kde-dark" "${LAF_DIR}/win11-kde-light"
-    cp -a "${SCRIPT_DIR}/look-and-feel/win11-kde-dark" "${LAF_DIR}/"
-    cp -a "${SCRIPT_DIR}/look-and-feel/win11-kde-light" "${LAF_DIR}/"
+    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
+    cp -a "${SCRIPT_DIR}/look-and-feel/neowin-dark" "${LAF_DIR}/"
+    cp -a "${SCRIPT_DIR}/look-and-feel/neowin-light" "${LAF_DIR}/"
     ok "Look-and-feel packages installed"
 
-    # Sound theme
-    info "Installing Win11-KDE sound theme..."
+    # Sound theme (default: win11)
+    info "Installing sound themes..."
     mkdir -p "${SOUND_DIR}"
-    rm -rf "${SOUND_DIR}/win11-kde"
-    cp -a "${SCRIPT_DIR}/sounds/win11-kde" "${SOUND_DIR}/win11-kde"
-    ok "Sound theme installed"
+    rm -rf "${SOUND_DIR}/neowin"
+    cp -a "${SCRIPT_DIR}/sounds/win11-kde" "${SOUND_DIR}/neowin"
+    ok "Win11 sound theme installed as default"
 
     # Refresh icon cache
     info "Refreshing KDE caches..."
@@ -107,7 +107,7 @@ install_assets() {
 }
 
 apply_config() {
-    info "Applying Win11-KDE configuration..."
+    info "Applying NeoWin configuration..."
 
     local kw
     kw="$(find_kwriteconfig)"
@@ -118,18 +118,18 @@ apply_config() {
 
     # Apply dark look-and-feel as the active theme
     if command -v lookandfeeltool &>/dev/null; then
-        lookandfeeltool --apply win11-kde-dark 2>/dev/null || true
+        lookandfeeltool --apply neowin-dark 2>/dev/null || true
     elif command -v plasma-apply-lookandfeel &>/dev/null; then
-        plasma-apply-lookandfeel --apply win11-kde-dark 2>/dev/null || true
+        plasma-apply-lookandfeel --apply neowin-dark 2>/dev/null || true
     fi
 
     # Enable KDE's built-in automatic dark/light switching
     $kw --file kdeglobals --group KDE --key AutomaticLookAndFeel --type bool true
-    $kw --file kdeglobals --group KDE --key DefaultDarkLookAndFeel win11-kde-dark
-    $kw --file kdeglobals --group KDE --key DefaultLightLookAndFeel win11-kde-light
+    $kw --file kdeglobals --group KDE --key DefaultDarkLookAndFeel neowin-dark
+    $kw --file kdeglobals --group KDE --key DefaultLightLookAndFeel neowin-light
 
     # Icon theme (shared between light and dark)
-    $kw --file kdeglobals --group Icons --key Theme "Win11-KDE"
+    $kw --file kdeglobals --group Icons --key Theme "NeoWin"
     # Widget style
     $kw --file kdeglobals --group KDE --key widgetStyle "Breeze"
     # Window decoration (dark default — KDE switches this with the look-and-feel)
@@ -149,7 +149,7 @@ apply_config() {
     # Night Color
     $kw --file kwinrc --group NightColor --key Active --type bool true
     # Sound theme
-    $kw --file kdeglobals --group Sounds --key Theme "win11-kde"
+    $kw --file kdeglobals --group Sounds --key Theme "neowin"
 
     # Notify KWin to reload
     if command -v qdbus6 &>/dev/null; then
@@ -160,8 +160,8 @@ apply_config() {
 
     ok "Configuration applied"
     ok "Automatic dark/light switching enabled via KDE settings"
-    info "KDE will switch between win11-kde-dark and win11-kde-light automatically"
-    info "You can adjust the schedule in System Settings → Colors & Themes → Behavior"
+    info "KDE will switch between neowin-dark and neowin-light automatically"
+    info "Adjust the schedule in System Settings → Colors & Themes → Behavior"
 }
 
 restore_panel() {
@@ -176,43 +176,108 @@ restore_panel() {
     fi
 }
 
-uninstall() {
-    info "Uninstalling Win11-KDE theme..."
+sounds() {
+    local pack="${1:-}"
 
-    rm -rf "${ICON_DIR}/Win11-KDE"
+    if [ -z "$pack" ]; then
+        echo "Available sound packs:"
+        echo ""
+        echo "  win11    Windows 11 sounds (default)"
+        echo "  win10    Windows 10 sounds"
+        echo "  win7     Windows 7 sounds (13 sub-schemes: Afternoon, Calligraphy, ...)"
+        echo "  winxp    Windows XP sounds"
+        echo ""
+        echo "Usage: $(basename "$0") sounds <pack> [scheme]"
+        echo ""
+        echo "Examples:"
+        echo "  $(basename "$0") sounds win11"
+        echo "  $(basename "$0") sounds win7 Sonata"
+        echo ""
+        if [ -d "${SCRIPT_DIR}/sounds/win7" ]; then
+            echo "Win7 schemes: $(ls -d "${SCRIPT_DIR}/sounds/win7"/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ', ' | sed 's/,$//')"
+        fi
+        return
+    fi
+
+    local src=""
+    case "$pack" in
+        win11)
+            src="${SCRIPT_DIR}/sounds/win11-kde"
+            ;;
+        win10)
+            src="${SCRIPT_DIR}/sounds/win10"
+            ;;
+        win7)
+            local scheme="${2:-Sonata}"
+            src="${SCRIPT_DIR}/sounds/win7/${scheme}"
+            if [ ! -d "$src" ]; then
+                error "Win7 scheme '${scheme}' not found"
+                echo "Available: $(ls -d "${SCRIPT_DIR}/sounds/win7"/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ', ' | sed 's/,$//')"
+                return 1
+            fi
+            ;;
+        winxp)
+            src="${SCRIPT_DIR}/sounds/winxp"
+            ;;
+        *)
+            error "Unknown sound pack: $pack"
+            return 1
+            ;;
+    esac
+
+    info "Installing ${pack} sound pack..."
+    rm -rf "${SOUND_DIR}/neowin"
+    mkdir -p "${SOUND_DIR}/neowin/stereo"
+
+    cp -a "${src}/index.theme" "${SOUND_DIR}/neowin/"
+    cp -a "${src}/stereo" "${SOUND_DIR}/neowin/"
+    # Override the theme name so KDE always sees "neowin"
+    sed -i "s/^Name=.*/Name=NeoWin/" "${SOUND_DIR}/neowin/index.theme"
+
+    ok "Sound pack '${pack}' installed"
+    info "You may need to select 'neowin' in System Settings → Sounds if not already active"
+}
+
+uninstall() {
+    info "Uninstalling NeoWin theme..."
+
+    rm -rf "${ICON_DIR}/NeoWin"
     for theme in WillowDarkBlur WillowDarkBlurAlt WillowLightBlur WillowLightBlurAlt; do
         rm -rf "${AURORAE_DIR}/${theme}"
     done
     rm -rf "${CURSOR_DIR}/WinSur-dark-cursors" "${CURSOR_DIR}/WinSur-white-cursors"
     rm -rf "${PLASMA_THEME_DIR}/Utterly-Round"
     rm -f "${COLOR_DIR}/Win11KDEDark.colors" "${COLOR_DIR}/Win11KDELight.colors"
-    rm -rf "${LAF_DIR}/win11-kde-dark" "${LAF_DIR}/win11-kde-light"
-    rm -rf "${SOUND_DIR}/win11-kde"
+    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
+    rm -rf "${SOUND_DIR}/neowin"
 
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true
     fi
 
-    ok "Win11-KDE theme uninstalled"
+    ok "NeoWin theme uninstalled"
     warn "You may need to select a different theme in System Settings"
 }
 
 usage() {
     cat << EOF
-Win11-KDE Theme Installer
+NeoWin — Windows 11 style KDE Plasma theme
 
 Usage: $(basename "$0") <command>
 
 Commands:
   install              Install all theme assets, apply config, enable auto dark/light
   restore-panel        Restore saved panel layout
+  sounds [pack]        List or switch sound packs (win11, win10, win7, winxp)
   uninstall            Remove all installed theme assets
   help                 Show this help message
 
 Examples:
   $(basename "$0") install              # Install everything and configure KDE
+  $(basename "$0") sounds               # List available sound packs
+  $(basename "$0") sounds win7 Sonata   # Switch to Win7 Sonata sounds
   $(basename "$0") restore-panel        # Restore the saved panel layout
-  $(basename "$0") uninstall            # Remove all Win11-KDE assets
+  $(basename "$0") uninstall            # Remove all NeoWin assets
 
 Dark/light switching is handled natively by KDE (System Settings → Colors & Themes).
 The installer configures AutomaticLookAndFeel with the dark and light variants.
@@ -226,9 +291,13 @@ case "${1:-help}" in
         apply_config
         echo ""
         info "Run '$(basename "$0") restore-panel' to restore the saved panel layout"
+        info "Run '$(basename "$0") sounds' to see available sound packs"
         ;;
     restore-panel)
         restore_panel
+        ;;
+    sounds)
+        sounds "${2:-}" "${3:-}"
         ;;
     uninstall)
         uninstall

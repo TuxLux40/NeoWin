@@ -1,4 +1,4 @@
-# Win11-KDE
+# NeoWin
 
 A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark variants with automatic switching support.
 
@@ -7,19 +7,19 @@ A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark vari
 | Component | Dark | Light |
 |---|---|---|
 | **Window Decoration** | Willow Dark Blur | Willow Light Blur |
-| **Icons** | Win11-KDE (single theme, adapts via color scheme) | ← same |
+| **Icons** | NeoWin (single theme, adapts via color scheme) | ← same |
 | **Application Style** | Breeze | Breeze |
 | **Plasma Style** | Utterly-Round (transparent + blur, follows color scheme) | ← same |
 | **Color Scheme** | WillowDarkBlur | WillowLightBlur |
 | **Cursors** | WinSur Dark | WinSur White |
-| **Sound Theme** | Win11-KDE (Windows 11 sounds, all 44 freedesktop events) | ← same |
+| **Sound Theme** | Win11 (default), Win10, Win7, WinXP available | ← same |
 | **Splash Screen** | None | None |
 
 ## Quick Start
 
 ```bash
-git clone <this-repo> ~/git/win11-kde
-cd ~/git/win11-kde
+git clone <this-repo> ~/git/NeoWin
+cd ~/git/NeoWin
 ./install.sh install          # Install assets, apply config, enable auto switching
 ```
 
@@ -27,8 +27,29 @@ cd ~/git/win11-kde
 
 ```
 ./install.sh install              # Install all assets + configure KDE
+./install.sh sounds               # List available sound packs
+./install.sh sounds win7 Sonata   # Switch to Win7 Sonata sounds
 ./install.sh restore-panel        # Restore the saved panel layout
 ./install.sh uninstall            # Remove everything
+```
+
+## Sound Packs
+
+Four sound packs are bundled. Win11 is installed by default.
+
+| Pack | Description |
+|---|---|
+| `win11` | Windows 11 sounds, all 44 freedesktop events mapped |
+| `win10` | Windows 10 sounds, 41 freedesktop events mapped |
+| `win7` | Windows 7 sounds with 13 sub-schemes: Afternoon, Calligraphy, Characters, Cityscape, Delta, Festival, Garden, Heritage, Landscape, Quirky, Raga, Savanna, Sonata |
+| `winxp` | Windows XP sounds, 26 freedesktop events mapped |
+
+Switch sound packs anytime:
+
+```bash
+./install.sh sounds win10             # Switch to Win10 sounds
+./install.sh sounds win7 Calligraphy  # Switch to Win7 Calligraphy scheme
+./install.sh sounds winxp             # Switch to WinXP sounds
 ```
 
 ## Auto Dark/Light Switching
@@ -51,7 +72,7 @@ kquitapp6 plasmashell && kstart plasmashell
 
 ## Icon Theme Coverage
 
-The Win11-KDE icon theme is based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) by zayronxio, with additional symlinks for complete KDE coverage:
+The NeoWin icon theme is based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) by zayronxio, with additional symlinks for complete KDE coverage:
 
 - **6,600+ icons** across actions, apps, categories, devices, emblems, mimes, places, status
 - All `org.kde.*` app names mapped (Dolphin, Konsole, Kate, Okular, Discover, Spectacle, etc.)

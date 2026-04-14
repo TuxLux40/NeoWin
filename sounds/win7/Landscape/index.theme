@@ -1,0 +1,8 @@
+[Sound Theme]
+Name=NeoWin Win7 Landscape
+Comment=Windows 7 Landscape sound scheme for NeoWin
+Directories=stereo
+Inherits=freedesktop
+
+[stereo]
+OutputProfile=stereo

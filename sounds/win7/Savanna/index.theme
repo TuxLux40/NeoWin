@@ -1,0 +1,8 @@
+[Sound Theme]
+Name=NeoWin Win7 Savanna
+Comment=Windows 7 Savanna sound scheme for NeoWin
+Directories=stereo
+Inherits=freedesktop
+
+[stereo]
+OutputProfile=stereo
