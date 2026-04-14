@@ -1,6 +1,6 @@
 # NeoWin
 
-A complete Windows 11 style theme for KDE Plasma 6. Includes light and dark variants with automatic switching support.
+A complete Windows 11 inspired theme for KDE Plasma 6. Includes light and dark variants for automatic day/night switching and a MacOS/Gnome Style panel layout.
 
 ## Components
 
