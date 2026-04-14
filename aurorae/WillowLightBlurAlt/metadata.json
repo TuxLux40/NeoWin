@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "",
+                "Name": "doncsugar"
+            }
+        ],
+        "Category": "",
+        "Dependencies": [
+        ],
+        "Description": "",
+        "EnabledByDefault": true,
+        "Id": "willow-light-alt-aurorae",
+        "License": "GPLv3",
+        "Name": "Willow Light Alt",
+        "Version": "0.1"
+    }
+}

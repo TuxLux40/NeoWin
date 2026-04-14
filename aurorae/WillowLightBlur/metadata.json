@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "",
+                "Name": "doncsugar"
+            }
+        ],
+        "Category": "",
+        "Dependencies": [
+        ],
+        "Description": "A Windows 11 style demo.",
+        "EnabledByDefault": true,
+        "Id": "willow-light-aurorae",
+        "License": "GPLv3",
+        "Name": "Willow Light",
+        "Version": "0.1"
+    }
+}
