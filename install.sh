@@ -266,6 +266,30 @@ sounds() {
     info "You may need to select 'neowin' in System Settings → Sounds if not already active"
 }
 
+reload_plasma() {
+    info "Refreshing icon cache and reloading Plasma..."
+
+    if command -v kbuildsycoca6 &>/dev/null; then
+        kbuildsycoca6 --noincremental 2>/dev/null || true
+    elif command -v kbuildsycoca5 &>/dev/null; then
+        kbuildsycoca5 --noincremental 2>/dev/null || true
+    fi
+
+    if command -v qdbus6 &>/dev/null; then
+        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    elif command -v qdbus &>/dev/null; then
+        qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    fi
+
+    if command -v kquitapp6 &>/dev/null && command -v kstart &>/dev/null; then
+        kquitapp6 plasmashell 2>/dev/null || true
+        setsid kstart plasmashell </dev/null >/dev/null 2>&1 &
+        ok "Plasma shell restarted"
+    else
+        warn "kquitapp6/kstart not found — restart plasmashell manually to see all changes"
+    fi
+}
+
 uninstall() {
     info "Uninstalling NeoWin theme..."
 
@@ -320,6 +344,7 @@ case "${1:-help}" in
     install)
         install_assets
         apply_config
+        reload_plasma
         echo ""
         info "Run '$(basename "$0") restore-panel' to restore the saved panel layout"
         info "Run '$(basename "$0") sounds' to see available sound packs"

@@ -27,6 +27,8 @@ All operations go through `./install.sh` (bash, `set -euo pipefail`). No build s
 ./install.sh sounds win7 Sonata   # Switch to Win7 sub-scheme (default sub-scheme: Sonata)
 ./install.sh sounds winxp         # Switch to WinXP sounds
 ./install.sh restore-panel        # Copy panel-layout/ over ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+./install.sh wallpaper            # Set Picture of the Day wallpaper (default provider: bing)
+./install.sh wallpaper apod       # Use NASA APOD provider instead
 ./install.sh help
 ```
 
@@ -43,7 +45,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 
 ## Installer Internals
 
-`install.sh` has four functions: `install_assets`, `apply_config`, `sounds`, `restore_panel`, `uninstall`.
+`install.sh` has these functions: `install_assets`, `apply_config`, `sounds`, `restore_panel`, `wallpaper`, `reload_plasma`, `uninstall`.
 
 **`install_assets`** copies into XDG dirs:
 - `icons/win11-kde/` → `~/.local/share/icons/NeoWin` (on-disk dir renamed during copy; source dir keeps legacy name)
@@ -59,6 +61,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `kdeglobals [KDE] AutomaticLookAndFeel=true`, `DefaultDarkLookAndFeel=neowin-dark`, `DefaultLightLookAndFeel=neowin-light`
 - `kdeglobals [Icons] Theme=NeoWin`, `[KDE] widgetStyle=Breeze`, `[Sounds] Theme=neowin`
 - `kwinrc [org.kde.kdecoration2] library=org.kde.kwin.aurorae.v2`, `theme=__aurorae__svg__WillowDarkBlur`, `BorderSize=NoSides`, `BorderSizeAuto=false`, `ButtonsOnLeft=M`
+- `kwinrc [TabBox] LayoutName=coverswitch` (Alt+Tab cover switch)
 - `kwinrc [Plugins] blurEnabled=true`, `[Effect-blur] BlurStrength=13`, `[NightColor] Active=true`
 - `plasmarc [Theme] name=Utterly-Round`
 - `ksplashrc [KSplash] Engine=none`, `Theme=None`
@@ -68,6 +71,10 @@ qdbus6 org.kde.KWin /KWin reconfigure
 **`sounds <pack> [scheme]`** wipes `~/.local/share/sounds/neowin`, copies `index.theme` + `stereo/` from the chosen source, then `sed`s `Name=...` → `Name=NeoWin` so KDE's sound theme ID stays constant. Invalid pack/scheme prints the available list and exits non-zero.
 
 **`restore_panel`** copies `panel-layout/plasma-org.kde.plasma.desktop-appletsrc` over `~/.config/plasma-org.kde.plasma.desktop-appletsrc`. Not called from `install`.
+
+**`wallpaper [provider]`** pokes plasmashell via `qdbus6 org.kde.plasmashell /PlasmaShell evaluateScript` to switch every desktop's wallpaper plugin to `org.kde.potd` (Picture of the Day) with the given provider (default `bing`; e.g. `apod`, `unsplash`, `noaa`, etc.). Requires Plasma to be running. Not called from `install`.
+
+**`reload_plasma`** runs `kbuildsycoca6 --noincremental`, pings KWin with `qdbus6 /KWin reconfigure`, then `kquitapp6 plasmashell` + `kstart plasmashell` to force-reload everything. Called at the end of `install` so theme/icon/color changes show up without the user having to log out.
 
 ## Repo Structure
 
@@ -144,8 +151,14 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 - The icon directory is still named `icons/win11-kde/` on disk (historical artifact), but `index.theme` sets `Name=NeoWin` so KDE sees it as "NeoWin".
 - Color scheme files: `NeoWinDark.colors` / `NeoWinLight.colors`. Internal `[General] ColorScheme=` key must match the filename stem (that's the ID KDE writes into `kdeglobals`); `Name=` is the display label.
 - Win7 sound pack has 13 sub-schemes (Afternoon, Calligraphy, Characters, Cityscape, Delta, Festival, Garden, Heritage, Landscape, Quirky, Raga, Savanna, Sonata). Each has original `.wav` files plus a `stereo/` dir with freedesktop-mapped names.
+- Sound event names in `stereo/` map freedesktop event names → Windows `.wav` files. When swapping a pack, verify semantic alignment (e.g. `power-unplug` → Windows Hardware Remove, **not** Ringout; `device-added` → Hardware Insert). Historically some packs had ring-out stolen for power-unplug — check against the `originals/` dir when adding a new pack.
 - The repo is ~239MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
+
+## Upstream Limitations (won't fix here)
+
+- **Systray icons are monochrome by Plasma design.** Volume/network/bluetooth/brightness widgets in Plasma 6 hardcode `*-symbolic` icon names and force `ColorScheme-Text` tinting — colored icons bundled in NeoWin are not used for those widgets. Weather widget is an exception because it renders OpenWeatherMap PNGs directly. Fixing this would require patching Plasma widget sources upstream.
+- **Willow Blur aurorae titlebar flicker on Wayland.** The four bundled Willow variants all use the Blur suffix; KWin recomputes the behind-blur region on every titlebar repaint, which can cause flicker/jitter. This is a KWin+aurorae+blur interaction, not something NeoWin can patch. Workaround: switch to a non-blur aurorae theme (none bundled; would need to be added) or a different decoration engine.
 
 ## Goals & Intentions
 
@@ -159,7 +172,7 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 
 - Rename `icons/win11-kde/` directory to `icons/neowin/` for consistency (requires re-commit of ~34k files).
 - Add a `--dry-run` flag to the installer.
-- Add wallpapers (currently not bundled — user uses Bing POTD via KDE widget).
+- Bundle actual wallpaper images (installer's `wallpaper` cmd just wires up KDE's POTD plugin; no static images shipped).
 - GTK theme integration (user has a separate `~/.themes/Windows10` GTK theme that needed fixes).
 - Upstream the icon symlink additions back to the Windows-Eleven project.
 - Add screenshots to README.
