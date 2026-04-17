@@ -266,28 +266,47 @@ sounds() {
     info "You may need to select 'neowin' in System Settings → Sounds if not already active"
 }
 
-reload_plasma() {
-    info "Refreshing icon cache and reloading Plasma..."
+refresh() {
+    info "Clearing caches and restarting Plasma..."
 
+    # Wipe all render/lookup caches that hold stale theme/icon/color data
+    rm -f "${HOME}/.cache/plasma_theme_"*.kcache 2>/dev/null || true
+    rm -f "${HOME}/.cache/plasma-svgelements-"* 2>/dev/null || true
+    rm -f "${HOME}/.cache/icon-cache.kcache" 2>/dev/null || true
+    rm -f "${HOME}/.cache/ksycoca"*"_"* 2>/dev/null || true
+    rm -rf "${HOME}/.cache/plasmashell" 2>/dev/null || true
+
+    # Rebuild ksycoca (app/service registry)
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true
     elif command -v kbuildsycoca5 &>/dev/null; then
         kbuildsycoca5 --noincremental 2>/dev/null || true
     fi
 
+    # Reload KWin
     if command -v qdbus6 &>/dev/null; then
         qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
     elif command -v qdbus &>/dev/null; then
         qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
     fi
 
+    # Restart plasmashell, waiting for clean exit before respawn
     if command -v kquitapp6 &>/dev/null && command -v kstart &>/dev/null; then
         kquitapp6 plasmashell 2>/dev/null || true
+        # Wait up to 10s for plasmashell to actually exit
+        for _ in {1..20}; do
+            pgrep -x plasmashell >/dev/null || break
+            sleep 0.5
+        done
+        pkill -9 -x plasmashell 2>/dev/null || true
         setsid kstart plasmashell </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null || true
         ok "Plasma shell restarted"
     else
-        warn "kquitapp6/kstart not found — restart plasmashell manually to see all changes"
+        warn "kquitapp6/kstart not found — restart plasmashell manually"
     fi
+
+    ok "Refresh complete"
 }
 
 uninstall() {
@@ -319,6 +338,7 @@ Usage: $(basename "$0") <command>
 
 Commands:
   install              Install all theme assets, apply config, enable auto dark/light
+  refresh              Clear caches and restart Plasma (apply theme changes live)
   restore-panel        Restore saved panel layout
   wallpaper [provider] Set Picture of the Day wallpaper on all desktops (default: bing)
   sounds [pack]        List or switch sound packs (win11, win10, win7, winxp)
@@ -344,10 +364,13 @@ case "${1:-help}" in
     install)
         install_assets
         apply_config
-        reload_plasma
+        refresh
         echo ""
         info "Run '$(basename "$0") restore-panel' to restore the saved panel layout"
         info "Run '$(basename "$0") sounds' to see available sound packs"
+        ;;
+    refresh|reload)
+        refresh
         ;;
     restore-panel)
         restore_panel
