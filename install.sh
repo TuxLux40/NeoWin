@@ -148,8 +148,10 @@ apply_config() {
     # Blur
     $kw --file kwinrc --group Plugins --key blurEnabled --type bool true
     $kw --file kwinrc --group Effect-blur --key BlurStrength "13"
-    # Night Color
+    # Night Color — enable with automatic (location-based) schedule so
+    # AutomaticLookAndFeel has a sunset/sunrise time to trigger on.
     $kw --file kwinrc --group NightColor --key Active --type bool true
+    $kw --file kwinrc --group NightColor --key Mode 0
     # Sound theme
     $kw --file kdeglobals --group Sounds --key Theme "neowin"
 
