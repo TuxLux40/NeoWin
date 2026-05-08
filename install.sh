@@ -145,6 +145,60 @@ configure_night_color() {
             else
                 warn "Unknown package manager — install geoclue2 manually for your distro"
             fi
+
+            # Restart plasma-knighttimed (Plasma 6's Night Color scheduling daemon)
+            # so it immediately attempts a fresh geoclue location lookup
+            if systemctl --user is-active plasma-knighttimed.service &>/dev/null; then
+                info "Restarting plasma-knighttimed to trigger location lookup..."
+                systemctl --user restart plasma-knighttimed.service 2>/dev/null || true
+            fi
+
+            # Poke KWin to reload Night Color configuration
+            if [ -n "$qd" ]; then
+                $qd org.kde.KWin /KWin reconfigure 2>/dev/null || true
+            fi
+
+            # Poll scheduledTransitionDateTime for up to 10 seconds to confirm a fix
+            if [ -n "$qd" ]; then
+                info "Waiting for geoclue to provide a location fix (up to 10 s)..."
+                local got_fix="false"
+                local i
+                for i in {1..10}; do
+                    sleep 1
+                    scheduled=$($qd org.kde.KWin.NightLight /org/kde/KWin/NightLight \
+                        org.kde.KWin.NightLight.scheduledTransitionDateTime 2>/dev/null || echo "0")
+                    if [ "${scheduled:-0}" != "0" ]; then
+                        got_fix="true"
+                        ok "geoclue location fix obtained — Night Color schedule is active"
+                        break
+                    fi
+                    printf "."
+                done
+                # End the progress-dot line if we printed any dots (i.e. no fix obtained)
+                [ "$got_fix" != "true" ] && echo ""
+
+                if [ "$got_fix" != "true" ]; then
+                    warn "geoclue did not provide a location fix within 10 seconds."
+                    warn "The geoclue portal (xdg-desktop-portal) may need configuration."
+                    echo ""
+                    echo "  [1] Set fixed times  (sunrise 07:00, sunset 19:00 — works without geoclue)"
+                    echo "  [2] Leave as-is      (geoclue may work after next login or portal setup)"
+                    echo ""
+                    local fallback="2"
+                    if [ -t 0 ]; then
+                        read -rp "Choose [1/2]: " fallback
+                    fi
+                    if [ "${fallback:-2}" = "1" ]; then
+                        $kw --file kwinrc --group NightColor --key Mode 2
+                        $kw --file kwinrc --group Times --key SunriseStart "07:00:00"
+                        $kw --file kwinrc --group Times --key SunsetStart "19:00:00"
+                        ok "Night Color set to fixed times (sunrise 07:00, sunset 19:00)"
+                        info "Adjust in System Settings → Night Color"
+                    else
+                        info "Leaving as geoclue mode — configure the geoclue portal or re-run install after next login"
+                    fi
+                fi
+            fi
             ;;
         2)
             $kw --file kwinrc --group NightColor --key Mode 2
