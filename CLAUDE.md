@@ -65,7 +65,9 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `kwinrc [Plugins] blurEnabled=true`, `[Effect-blur] BlurStrength=13`, `[NightColor] Active=true`
 - `plasmarc [Theme] name=Utterly-Round`
 - `ksplashrc [KSplash] Engine=none`, `Theme=None`
-- Applies dark LAF as active via `lookandfeeltool --apply neowin-dark` (fallback: `plasma-apply-lookandfeel`), then reloads KWin via `qdbus6 org.kde.KWin /KWin reconfigure` (fallback: `qdbus`).
+- Calls `configure_night_color()` to validate the Night Color schedule (see Auto Dark/Light Switching below); only changes `Mode` if the schedule is broken (mode=0 + no transitions).
+- Detects current `daylight` state via `qdbus6 org.kde.KWin.NightLight` and applies `neowin-light` or `neowin-dark` accordingly (falls back to dark if no session).
+- Reloads KWin via `qdbus6 org.kde.KWin /KWin reconfigure`, then reloads the `lookandfeelautoswitcher` kded module so it re-evaluates immediately.
 - The dark window decoration is written directly into `kwinrc`; on light switch KDE overrides it from the `neowin-light` LAF package.
 
 **`sounds <pack> [scheme]`** wipes `~/.local/share/sounds/neowin`, copies `index.theme` + `stereo/` from the chosen source, then `sed`s `Name=...` → `Name=NeoWin` so KDE's sound theme ID stays constant. Invalid pack/scheme prints the available list and exits non-zero.
@@ -110,20 +112,127 @@ NeoWin/
 └── config/                     # Reference config snapshots (kwinrc, plasmarc, kdeglobals)
 ```
 
+## Color Architecture
+
+Understanding this model prevents circular bugs. There are **two independent color systems** in KDE Plasma that do not talk to each other.
+
+### Layer A — Kirigami/Qt widget colors (text, labels, buttons in QML)
+
+**Source: always the active KDE color scheme** (`kdeglobals` → `NeoWinLight/Dark.colors`).
+The plasma theme's `colors` file does **not** affect this layer.
+
+Which group from the color scheme is used depends on the containment's `colorSet`:
+
+| Context | colorSet | Color scheme group |
+|---|---|---|
+| Lock screen clock | `Complementary` | `[Colors:Complementary]` |
+| Panel plasmoids (clock, systray text) | `Complementary` (inherited) | `[Colors:Complementary]` |
+| Desktop plasmoids (clock widget text) | `Window` | `[Colors:Window]` |
+| App window chrome | `Window` | `[Colors:Window]` |
+| App lists / file managers | `View` | `[Colors:View]` |
+| Toolbars / app headers | `Header` | `[Colors:Header]` |
+| Tooltips | `Tooltip` | `[Colors:Tooltip]` |
+| Selected text / items | `Selection` | `[Colors:Selection]` |
+
+### Layer B — KSvg/SVG rendering (panel background, widget frames, borders)
+
+**Source: plasma theme `colors` file if present; otherwise falls back to the active KDE color scheme.**
+KSvg substitutes CSS classes in SVG files:
+
+| CSS class in SVG | Maps to |
+|---|---|
+| `.ColorScheme-Background` | `Colors:Window.BackgroundNormal` |
+| `.ColorScheme-Text` | `Colors:Window.ForegroundNormal` |
+| `.ColorScheme-Highlight` | `Colors:Selection.BackgroundNormal` |
+| `.ColorScheme-HighlightedText` | `Colors:Selection.ForegroundNormal` |
+
+Utterly-Round's metadata declares `"follows all color scheme"` — its SVG files use these CSS classes throughout, so they adapt automatically without a `colors` file.
+
+### Full What-Controls-What Map
+
+| Visual element | Layer | Driven by |
+|---|---|---|
+| Lock screen clock text | A | `NeoWinLight/Dark.colors [Colors:Complementary] ForegroundNormal` |
+| Panel background color | B | `Utterly-Round` SVG → `[Colors:Window] BackgroundNormal` from active scheme |
+| Panel clock / systray text | A | `[Colors:Complementary] ForegroundNormal` |
+| Desktop widget text | A | `[Colors:Window] ForegroundNormal` |
+| Desktop widget background | B | `Utterly-Round` SVG → `[Colors:Window] BackgroundNormal` from active scheme |
+| App window text & bg | A | `[Colors:Window]` |
+| File manager lists | A | `[Colors:View]` |
+| Toolbar / header areas | A | `[Colors:Header]` |
+| Tooltips | A | `[Colors:Tooltip]` |
+| Window titlebar text/bg | Aurorae SVG + `[WM]` | `[WM] activeForeground / activeBackground` in color scheme |
+| Auto dark/light trigger | kded plugin | `kdeglobals AutomaticLookAndFeel` + Night Color |
+
+### NeoWin Invariants — DO NOT CHANGE THESE
+
+**`[Colors:Complementary]` must be identical in both light and dark schemes** (dark bg + white text):
+- Lock screen renders on an always-dark blurred wallpaper — needs white text regardless of mode
+- Panel plasmoids inherit Complementary — same requirement
+- NeoWinLight and NeoWinDark both set: `BackgroundNormal=42,46,50` / `ForegroundNormal=252,252,252`
+- Never "fix" this to a light bg in NeoWinLight — it will break the panel or lock screen
+
+**Do not add a `colors` file to `plasma-theme/Utterly-Round/`:**
+- Utterly-Round's SVGs adapt to the KDE color scheme automatically (FollowsColorScheme)
+- A `colors` file overrides **all** SVG CSS class colors simultaneously for both modes
+- Adding one with dark backgrounds makes the panel dark in light mode too
+- `install.sh` removes any stale `colors` file from the installed theme on every run
+
+### Common Changes Guide
+
+**Changing accent color:**
+Edit `DecorationFocus`, `DecorationHover`, `ForegroundActive` in all `[Colors:*]` groups in both `NeoWinLight.colors` and `NeoWinDark.colors`. Current: `0,120,212` (Windows 11 blue) in light, `61,174,233` in dark.
+
+**Making the panel look different:**
+The panel background comes from `plasma-theme/Utterly-Round/widgets/panel-background.svgz` via `.ColorScheme-Background` → `[Colors:Window].BackgroundNormal` in the active scheme. To change panel background: edit the SVG directly, or change `BackgroundNormal` in `[Colors:Window]` (affects all window backgrounds too).
+
+**Changing desktop widget appearance:**
+Same path as panel — `widgets/background.svgz` uses the same CSS classes. Text color comes from `[Colors:Window].ForegroundNormal` in the KDE color scheme.
+
+**Adding a new plasmoid and its text looks wrong:**
+Find which `colorSet` the plasmoid or its containment sets, then adjust the corresponding `[Colors:*]` group in the color schemes.
+
+**What NOT to do:**
+- Do not add `plasma-theme/Utterly-Round/colors` — it breaks light mode by darkening panel backgrounds
+- Do not change `[Colors:Complementary]` in NeoWinLight to light values — breaks lock screen clock and panel text
+- Do not set `[Colors:Window].ForegroundNormal` to white in NeoWinLight — breaks all app window text
+
+---
+
 ## How It Works
 
 ### Install Flow
 `./install.sh install` does two things:
 1. **install_assets()** — copies all theme files to XDG directories under `~/.local/share/`
-2. **apply_config()** — uses `kwriteconfig6` to set all KDE config keys and applies the dark look-and-feel as default
+2. **apply_config()** — uses `kwriteconfig6` to set all KDE config keys, then applies the correct look-and-feel for the current time of day
 
 ### Auto Dark/Light Switching
-Uses KDE's native `AutomaticLookAndFeel` mechanism:
-- `kdeglobals [KDE] AutomaticLookAndFeel=true`
-- `kdeglobals [KDE] DefaultDarkLookAndFeel=neowin-dark`
-- `kdeglobals [KDE] DefaultLightLookAndFeel=neowin-light`
 
-KDE switches the entire look-and-feel package (cursors, colors, window decoration) based on the Night Color schedule in System Settings.
+**Mechanism (Plasma 6.1+):** A kded6 plugin (`lookandfeelautoswitcher.so`) subscribes to KWin NightLight's `daylight` D-Bus property. When it changes (sunrise/sunset transition), the plugin calls `lookandfeeltool` to swap the entire look-and-feel package — cursors, colors, window decoration — atomically.
+
+Config keys written to `kdeglobals [KDE]`:
+- `AutomaticLookAndFeel=true`
+- `DefaultDarkLookAndFeel=neowin-dark`
+- `DefaultLightLookAndFeel=neowin-light`
+
+**Critical dependency: KWin NightLight must have a working schedule.** The autoswitcher only fires when `daylight` transitions between `true` and `false`. If NightLight has no scheduled transitions (`scheduledTransitionDateTime=0`), the autoswitcher never fires and the theme is stuck. This happens when Night Color is in `Mode=0` (automatic location) but geoclue2 is not installed or not providing location data.
+
+**What `apply_config` does on install/reinstall:**
+1. Writes the `AutomaticLookAndFeel` keys
+2. Calls `configure_night_color()` to check if NightLight has a working schedule:
+   - If transitions are already scheduled → leaves Night Color untouched
+   - If mode is non-zero (user set up location or fixed times) → leaves it untouched
+   - If mode=0 with no transitions (geoclue broken) → prompts: install geoclue2, use fixed times 07:00/19:00, or skip
+3. Queries `org.kde.KWin.NightLight.daylight` via D-Bus and applies `neowin-light` or `neowin-dark` to match current time (falls back to dark if no session)
+4. Reloads the `lookandfeelautoswitcher` kded module so it re-evaluates immediately
+
+**Night Color modes** (stored in `kwinrc [NightColor] Mode`):
+- `0` — Automatic location via geoclue2 (requires `geoclue` package)
+- `1` — Manual location (lat/lon in `kwinrc [Location]`, KWin computes sunrise/sunset)
+- `2` — Fixed times (values in `kwinrc [Times] SunriseStart` / `SunsetStart`)
+- `3` — Always on (night color active all the time, no switching)
+
+Configure via System Settings → Colors & Themes → Night Color. The installer does **not** store or hardcode location data.
 
 ### Sound Theme System
 Each sound pack has an `index.theme` and a `stereo/` directory with `.wav` files named after freedesktop sound event names (e.g., `dialog-error.wav`, `desktop-login.wav`). The `sounds` command swaps which pack is installed under `~/.local/share/sounds/neowin/`.
@@ -154,6 +263,8 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 - Sound event names in `stereo/` map freedesktop event names → Windows `.wav` files. When swapping a pack, verify semantic alignment (e.g. `power-unplug` → Windows Hardware Remove, **not** Ringout; `device-added` → Hardware Insert). Historically some packs had ring-out stolen for power-unplug — check against the `originals/` dir when adding a new pack.
 - The repo is ~239MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
+- Auto dark/light switching requires a working Night Color schedule. `Mode=0` (automatic location) needs `geoclue` installed; without it, `daylight` stays `false` permanently and the autoswitcher never fires. Installer detects and prompts for this. Use `Mode=1` (manual lat/lon) or `Mode=2` (fixed times) as alternatives — both work without geoclue.
+- Lock screen clock color is controlled by `[Colors:Complementary]` in the color scheme — see Color Architecture section for why it must always be dark bg + white fg in both schemes.
 
 ## Upstream Limitations (won't fix here)
 

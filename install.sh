@@ -37,6 +37,128 @@ find_kwriteconfig() {
     fi
 }
 
+# Read a single KDE config value; returns empty string if unavailable
+_kread() {
+    local file="$1" group="$2" key="$3" tool
+    tool="kreadconfig6"
+    command -v "$tool" &>/dev/null || tool="kreadconfig5"
+    command -v "$tool" &>/dev/null || { echo ""; return; }
+    "$tool" --file "$file" --group "$group" --key "$key" 2>/dev/null || echo ""
+}
+
+# Apply the look-and-feel package that matches the current time of day.
+# For Mode=2 (fixed times) computes daylight directly from configured times —
+# KWin processes reconfigure asynchronously so its daylight flag may lag.
+# For other modes queries KWin NightLight; falls back to neowin-dark.
+_apply_laf_for_time() {
+    local laf="neowin-dark" is_day="false" qd=""
+    command -v qdbus6 &>/dev/null && qd="qdbus6"
+
+    local mode
+    mode=$(_kread kwinrc NightColor Mode)
+
+    if [ "${mode:-0}" = "2" ]; then
+        # Fixed times: compute directly — don't trust KWin's async state
+        local sunrise sunset now
+        sunrise=$(_kread kwinrc Times SunriseStart)
+        sunset=$(_kread kwinrc Times SunsetStart)
+        sunrise="${sunrise:-07:00:00}"
+        sunset="${sunset:-19:00:00}"
+        now=$(date +%H:%M:%S)
+        [[ "$now" > "$sunrise" && "$now" < "$sunset" ]] && is_day="true"
+    elif [ -n "$qd" ]; then
+        is_day=$($qd org.kde.KWin.NightLight /org/kde/KWin/NightLight \
+            org.kde.KWin.NightLight.daylight 2>/dev/null || echo "false")
+    fi
+
+    [ "$is_day" = "true" ] && laf="neowin-light"
+
+    if command -v lookandfeeltool &>/dev/null; then
+        lookandfeeltool --apply "$laf" 2>/dev/null || true
+    elif command -v plasma-apply-lookandfeel &>/dev/null; then
+        plasma-apply-lookandfeel --apply "$laf" 2>/dev/null || true
+    fi
+    info "Applied ${laf} for current time of day"
+}
+
+# Ensure Night Color is enabled and has a working schedule.
+# Leaves the existing mode untouched if transitions are already scheduled.
+# If mode=0 (automatic) and geoclue is not providing location, prompts for
+# an alternative rather than silently leaving switching broken.
+configure_night_color() {
+    local kw="$1"
+    $kw --file kwinrc --group NightColor --key Active --type bool true
+
+    local mode scheduled="" qd=""
+    mode=$(_kread kwinrc NightColor Mode)
+    mode="${mode:-0}"
+    command -v qdbus6 &>/dev/null && qd="qdbus6"
+
+    if [ -n "$qd" ]; then
+        scheduled=$($qd org.kde.KWin.NightLight /org/kde/KWin/NightLight \
+            org.kde.KWin.NightLight.scheduledTransitionDateTime 2>/dev/null || echo "0")
+    fi
+
+    # Non-zero next transition means a working schedule exists — leave it alone
+    if [ "${scheduled:-0}" != "0" ]; then
+        ok "Night Color schedule is active"
+        return
+    fi
+
+    # Non-zero mode means user explicitly configured location or fixed times;
+    # trust it even if we can't confirm it works right now
+    if [ "$mode" != "0" ]; then
+        info "Night Color mode=${mode} — preserving existing configuration"
+        return
+    fi
+
+    # mode=0 with no scheduled transition: automatic location detection failed
+    warn "Night Color is in automatic mode but has no active schedule."
+    warn "geoclue2 may not be installed — dark/light auto-switching won't work without it."
+    echo ""
+    echo "  [1] Install geoclue2  (automatic location — recommended)"
+    echo "  [2] Fixed times       (sunrise 07:00, sunset 19:00 — adjust in System Settings)"
+    echo "  [3] Skip              (configure manually: System Settings → Night Color)"
+    echo ""
+
+    local choice="3"
+    if [ -t 0 ]; then
+        read -rp "Choose [1/2/3]: " choice
+    else
+        warn "Non-interactive mode — skipping Night Color setup; configure manually."
+    fi
+
+    case "${choice:-3}" in
+        1)
+            if command -v pacman &>/dev/null; then
+                info "Installing geoclue..."
+                sudo pacman -S --needed --noconfirm geoclue 2>/dev/null \
+                    || warn "Install failed — run manually: sudo pacman -S geoclue"
+            elif command -v apt-get &>/dev/null; then
+                info "Installing geoclue2..."
+                sudo apt-get install -y geoclue-2.0 2>/dev/null \
+                    || warn "Install failed — run manually: sudo apt-get install geoclue-2.0"
+            elif command -v dnf &>/dev/null; then
+                info "Installing geoclue2..."
+                sudo dnf install -y geoclue2 2>/dev/null \
+                    || warn "Install failed — run manually: sudo dnf install geoclue2"
+            else
+                warn "Unknown package manager — install geoclue2 manually for your distro"
+            fi
+            ;;
+        2)
+            $kw --file kwinrc --group NightColor --key Mode 2
+            $kw --file kwinrc --group Times --key SunriseStart "07:00:00"
+            $kw --file kwinrc --group Times --key SunsetStart "19:00:00"
+            ok "Night Color set to fixed times (sunrise 07:00, sunset 19:00)"
+            info "Adjust in System Settings → Night Color"
+            ;;
+        *)
+            info "Skipped — configure Night Color manually in System Settings"
+            ;;
+    esac
+}
+
 install_assets() {
     info "Installing NeoWin theme assets..."
 
@@ -86,6 +208,10 @@ install_assets() {
     cp -a "${SCRIPT_DIR}/look-and-feel/neowin-light" "${LAF_DIR}/"
     ok "Look-and-feel packages installed"
 
+    # Remove any stale plasma theme colors file — Utterly-Round follows the KDE
+    # color scheme natively; a colors file would override SVG backgrounds globally
+    rm -f "${PLASMA_THEME_DIR}/Utterly-Round/colors"
+
     # Sound theme (default: win11)
     info "Installing sound themes..."
     mkdir -p "${SOUND_DIR}"
@@ -116,13 +242,6 @@ apply_config() {
         return 1
     fi
 
-    # Apply dark look-and-feel as the active theme
-    if command -v lookandfeeltool &>/dev/null; then
-        lookandfeeltool --apply neowin-dark 2>/dev/null || true
-    elif command -v plasma-apply-lookandfeel &>/dev/null; then
-        plasma-apply-lookandfeel --apply neowin-dark 2>/dev/null || true
-    fi
-
     # Enable KDE's built-in automatic dark/light switching
     $kw --file kdeglobals --group KDE --key AutomaticLookAndFeel --type bool true
     $kw --file kdeglobals --group KDE --key DefaultDarkLookAndFeel neowin-dark
@@ -148,24 +267,31 @@ apply_config() {
     # Blur
     $kw --file kwinrc --group Plugins --key blurEnabled --type bool true
     $kw --file kwinrc --group Effect-blur --key BlurStrength "13"
-    # Night Color — enable with automatic (location-based) schedule so
-    # AutomaticLookAndFeel has a sunset/sunrise time to trigger on.
-    $kw --file kwinrc --group NightColor --key Active --type bool true
-    $kw --file kwinrc --group NightColor --key Mode 0
+    # Night Color — ensure enabled; handle schedule if broken
+    configure_night_color "$kw"
     # Sound theme
     $kw --file kdeglobals --group Sounds --key Theme "neowin"
 
     # Notify KWin to reload
-    if command -v qdbus6 &>/dev/null; then
-        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
-    elif command -v qdbus &>/dev/null; then
-        qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    local qd=""
+    command -v qdbus6 &>/dev/null && qd="qdbus6"
+    command -v qdbus &>/dev/null && [ -z "$qd" ] && qd="qdbus"
+    if [ -n "$qd" ]; then
+        $qd org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    fi
+
+    # Apply the LAF that matches current time, then reload the kded autoswitcher
+    # so it re-evaluates immediately rather than waiting for the next transition
+    _apply_laf_for_time
+    if [ -n "$qd" ]; then
+        $qd org.kde.kded6 /kded org.kde.kded6.unloadModule lookandfeelautoswitcher >/dev/null 2>&1 || true
+        $qd org.kde.kded6 /kded org.kde.kded6.loadModule lookandfeelautoswitcher >/dev/null 2>&1 || true
     fi
 
     ok "Configuration applied"
-    ok "Automatic dark/light switching enabled via KDE settings"
-    info "KDE will switch between neowin-dark and neowin-light automatically"
-    info "Adjust the schedule in System Settings → Colors & Themes → Behavior"
+    ok "Automatic dark/light switching enabled"
+    info "KDE will switch between neowin-dark and neowin-light at sunrise/sunset"
+    info "Adjust the schedule in System Settings → Night Color"
 }
 
 restore_panel() {
