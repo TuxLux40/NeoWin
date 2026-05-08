@@ -112,6 +112,50 @@ NeoWin/
 └── config/                     # Reference config snapshots (kwinrc, plasmarc, kdeglobals)
 ```
 
+## Icon Architecture
+
+### How KDE Resolves Icons by Area
+
+The icon loader searches ALL declared directories by name. `Context=` in `index.theme` is a hint for size preference, not a hard filter. An icon found in any declared directory at any matching size will be used.
+
+| UI area | Context dir | Sizes | Icon names |
+|---|---|---|---|
+| Dolphin sidebar (Places) | `places/` | 16–48px | `user-home`, `folder-documents`, `folder-download`, `folder-music`, `folder-pictures`, `folder-videos`, `user-trash`, `user-desktop`, `network-server` |
+| Discover category sidebar | `categories/` | 32px + symbolic | `applications-games`, `-graphics`, `-multimedia`, `-internet`, `-network`, `-system`, `-utilities`, `-office`, `-development`, `-education`, `-other`, `-science`, `-addons` |
+| System Settings sidebar | `apps/scalable/` (fallthrough) | 22px | `preferences-desktop-font`, `preferences-desktop-display`, `preferences-desktop-mouse`, `preferences-system-network`, `preferences-system-login`, `preferences-system-windows`, `preferences-security`, `preferences-system`, etc. |
+| App launcher / taskbar | `apps/scalable/` | scalable | App `.desktop` `Icon=` value — modern KDE uses `org.kde.*` names; legacy uses short names |
+| Systray | `status/` | 16–22px | **Upstream limitation** — see below |
+
+### Critical: `apps/scalable` Serves System Settings Icons
+
+`apps/scalable` declares `MinSize=16, MaxSize=512`. This means every `preferences-*.svg` in that directory (90+ files) is served when System Settings requests them at 22px. **No separate `preferences/` context directory is needed.** Adding one would be redundant.
+
+### Inheritance Chain
+
+NeoWin → breeze → hicolor
+
+Anything not in NeoWin falls back to Breeze. This is intentional for icons without a clear Windows equivalent.
+
+### Intentional Breeze Fallbacks
+
+| Icon | Area | Why no Windows mapping |
+|---|---|---|
+| `plasma` | Discover "Plasma Add-ons" category | KDE-specific, no Win11 equivalent |
+| All systray applet icons | Systray | Plasma 6 hardcodes `-symbolic` + monochrome tint regardless of icon theme |
+| `applications-accessories-symbolic` | Discover "Accessories" category | Mapped to `applications-utilities-symbolic` (closest match) |
+
+### What Was Added vs What Already Existed
+
+All Dolphin sidebar icons were already covered. Discover categories were mostly covered — only `applications-network` was missing (symlinked to `applications-internet`). System Settings sidebar icons were already covered via `apps/scalable/` MinSize=16 passthrough. Short-name aliases `dolphin` and `accessories-archive-manager` were missing and added.
+
+### What NOT to Do
+
+- Do not add a `preferences/` context directory — it's redundant, `apps/scalable` already covers it
+- Do not add icons for systray applets in `status/` to fix colors — Plasma 6 forces monochrome tinting regardless
+- Do not remove the `FollowsColorScheme=true` from `index.theme` — it enables symbolic icons to adapt to light/dark automatically
+
+---
+
 ## Color Architecture
 
 Understanding this model prevents circular bugs. There are **two independent color systems** in KDE Plasma that do not talk to each other.
