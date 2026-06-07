@@ -154,6 +154,50 @@ All Dolphin sidebar icons were already covered. Discover categories were mostly 
 - Do not add icons for systray applets in `status/` to fix colors — Plasma 6 forces monochrome tinting regardless
 - Do not remove the `FollowsColorScheme=true` from `index.theme` — it enables symbolic icons to adapt to light/dark automatically
 
+### Sources & Databases for Icon Work
+
+When extending or auditing the icon theme, use these authoritative references instead of guessing or vibe-coding:
+
+- **freedesktop.org standards** (the foundation everything builds on):
+  - Icon Naming Specification: https://specifications.freedesktop.org/icon-naming-spec/latest/
+  - Icon Theme Specification: https://specifications.freedesktop.org/icon-theme-spec/latest/
+- **KDE/Plasma official guidance**:
+  - https://develop.kde.org/docs/features/additional-features/icons/
+  - Human Interface Guidelines (icons section): https://develop.kde.org/hig/icons/
+  - Critical Plasma 6 changes (symbolic `-symbolic` suffix, everything now comes from the system icon theme): https://pointieststick.com/2023/08/12/how-all-this-icon-stuff-is-going-to-work-in-plasma-6/
+- **Reference implementation (what names Plasma + stock apps actually request today)**:
+  - Install `plasma-sdk` and use the **Icon Explorer** tool to browse Breeze by category/name.
+  - Source: https://invent.kde.org/plasma/breeze-icons (or the GitHub mirror).
+- **Upstream for NeoWin's icon base**:
+  - https://github.com/zayronxio/windows-eleven-skin (the `icons/` subdirectory is the origin of `icons/win11-kde/`).
+  - Store page: https://store.kde.org/p/1977340
+- **Practical discovery on your machine**:
+  - `kiconfinder6 <name>` — tells you exactly which file (and theme) currently wins.
+  - Runtime logging: `QT_LOGGING_RULES="kf.icon.*=true" <app>`
+  - Static analysis: `strings` on KIO plugins, Dolphin, etc. (e.g. `recentlyused.so`).
+- **Other Win11-style icon sources** (for filling real gaps):
+  - Other community ports on store.kde.org / opendesktop (search "windows 11" icon theme).
+  - Related work by zayronXIO (MacOS-style icon sets for visual reference).
+  - **Never** mass-copy Breeze SVGs. Symlink to the closest good Win11-style asset you already have, or create a minimal adaptation that matches the existing style (gradients, ColorScheme classes, etc.).
+
+See the companion file `icons/MAPPINGS.md` for a practical quick-start workflow and current priority name lists.
+
+### Icon Maintenance & Audit Process
+
+Previous AI-assisted sessions produced many ad-hoc symlinks and some duplication. Going forward we use a repeatable process:
+
+1. **Identify the real name** an app or widget is requesting (use the sources above — never assume).
+2. **Check current resolution**: `kiconfinder6 <name>` (note whether it comes from NeoWin or falls back to breeze).
+3. **Add the mapping** using the documented symlink pattern in the correct context directory (see `index.theme` + the table earlier in this section). Also handle the `-symbolic` variant and `@2x` scales when relevant.
+4. **Test**:
+   - Re-run `kiconfinder6`.
+   - `./install.sh install` (or just the icon copy step) + `kbuildsycoca6 --noincremental`.
+   - Exercise the UI element in the real app (Dolphin sidebar + context menu, file picker, System Settings, etc.) in both light and dark mode.
+5. **Document** the addition in `icons/MAPPINGS.md` and (if significant) here in CLAUDE.md.
+6. **Audit periodically** with the Icon Explorer + targeted `kiconfinder6` runs against the priority lists in MAPPINGS.md.
+
+See `icons/MAPPINGS.md` for the current quick-start commands, duplication policy, and high-priority name lists (Recent/History, core context-menu actions, etc.).
+
 ---
 
 ## Color Architecture
@@ -215,6 +259,12 @@ Utterly-Round's metadata declares `"follows all color scheme"` — its SVG files
 - Panel plasmoids inherit Complementary — same requirement
 - NeoWinLight and NeoWinDark both set: `BackgroundNormal=42,46,50` / `ForegroundNormal=252,252,252`
 - Never "fix" this to a light bg in NeoWinLight — it will break the panel or lock screen
+
+**Lock screen always uses a dedicated QML override shipped in the LAF packages**
+- Even with correct `[Colors:Complementary]`, the stock `LockScreenUi.qml` + Breeze `Clock.qml` can fail to pick up light `textColor` for custom light LAFs (inheritance / timing / greeter context issues observed after the 2026-05 color scheme fix).
+- Both `neowin-light` and `neowin-dark` now ship `contents/lockscreen/` (full snapshot of the Plasma shell's lockscreen QMLs + 1-line patch in `LockScreenUi.qml` that does `Kirigami.Theme.textColor: "#fcfcfc"` right after setting `colorSet: Complementary`).
+- This guarantees white clock text on the dark blurred background in *both* modes. The patch is the only NeoWin change; other files are verbatim copies for a self-contained override.
+- Maintenance: when Plasma updates the lockscreen QML, diff the stock files and re-apply the tiny patch (and update this note with the Plasma version tested).
 
 **Do not add a `colors` file to `plasma-theme/Utterly-Round/`:**
 - Utterly-Round's SVGs adapt to the KDE color scheme automatically (FollowsColorScheme)
@@ -308,7 +358,7 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 - The repo is ~239MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
 - Auto dark/light switching requires a working Night Color schedule. `Mode=0` (automatic location) needs `geoclue` installed; without it, `daylight` stays `false` permanently and the autoswitcher never fires. Installer detects and prompts for this. Use `Mode=1` (manual lat/lon) or `Mode=2` (fixed times) as alternatives — both work without geoclue.
-- Lock screen clock color is controlled by `[Colors:Complementary]` in the color scheme — see Color Architecture section for why it must always be dark bg + white fg in both schemes.
+- Lock screen clock color: see the "Lock screen always uses a dedicated QML override" section above (color scheme Complementary + LAF-shipped LockScreenUi.qml patch). The color-only attempt (commit 42548c4a) was insufficient on its own.
 
 ## Upstream Limitations (won't fix here)
 
