@@ -63,6 +63,20 @@ See: https://pointieststick.com/2023/08/12/how-all-this-icon-stuff-is-going-to-w
   - These follow the exact same minimal symlink pattern used in previous successful fixes (e.g. 955a3f1d).
 - Recommendation (still valid): Choose a canonical home (probably `places/` for the larger "Recent" sidebar use-case + good colored versions), then use symlinks from `actions/` where needed. Remove or replace lower-quality duplicates in a follow-up cleanup pass.
 
+### Status / Systray Icons (battery, weather)
+
+**Audit findings (June 2026)**:
+- `battery-critical` and `battery-charging` were missing from `status/` entirely and fell back to `apps/scalable/battery.svg`. Fixed:
+  - `battery-critical` → `battery-caution` (sizes 16, 22, 24)
+  - `battery-charging` → `battery-full-charging` (sizes 16, 22, 24)
+- Weather icons missing from `status/` and falling back to `apps/scalable/weather.svg`. Fixed:
+  - `weather-partly-cloudy` → `weather-many-clouds` (sizes 16, 22)
+  - `weather-thunderstorm` → `weather-storm` (sizes 16, 22)
+  - `weather-thunderstorm-night` → `weather-storm-night` (sizes 16, 22)
+  - `weather-tornado` → `weather-storm` (sizes 16, 22; no dedicated tornado icon exists)
+  - `weather-hurricane` → `weather-storm` (sizes 16, 22; no dedicated hurricane icon exists)
+- Note: Plasma 6 systray shows `-symbolic` variants (monochrome tinted). The above fixes the colored icon names used by Plasma's battery widget in non-systray contexts and by some third-party apps.
+
 ### Core Context Menu & Action Icons (most visible inconsistency)
 Standard freedesktop + heavy KDE usage:
 - `edit-cut`, `edit-copy`, `edit-paste`, `edit-delete`, `edit-rename`
