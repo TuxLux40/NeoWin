@@ -11,7 +11,7 @@
         ],
         "Description": "A Windows 11 style demo.",
         "EnabledByDefault": true,
-        "Id": "willow-dark-aurorae",
+        "Id": "willow-dark-blur-aurorae",
         "License": "GPLv3",
         "Name": "Willow Dark",
         "Version": "0.1"
