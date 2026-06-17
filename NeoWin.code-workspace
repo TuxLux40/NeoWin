@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Fluent-kde"
+		},
+		{
+			"path": "../RedmondX-icon-theme"
+		},
+		{
+			"path": "../willow-theme"
+		},
+		{
+			"path": "../Win11OS-kde"
+		},
+		{
+			"path": "../kde-theming-skill"
+		}
+	],
+	"settings": {}
+}
