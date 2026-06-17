@@ -13,6 +13,7 @@ COLOR_DIR="${HOME}/.local/share/color-schemes"
 LAF_DIR="${HOME}/.local/share/plasma/look-and-feel"
 CURSOR_DIR="${HOME}/.local/share/icons"
 SOUND_DIR="${HOME}/.local/share/sounds"
+KVANTUM_DIR="${HOME}/.config/Kvantum"
 
 # Colors for output
 RED='\033[0;31m'
@@ -212,6 +213,13 @@ install_assets() {
     # color scheme natively; a colors file would override SVG backgrounds globally
     rm -f "${PLASMA_THEME_DIR}/Utterly-Round/colors"
 
+    # Kvantum theme
+    info "Installing NeoWin Kvantum theme..."
+    mkdir -p "${KVANTUM_DIR}"
+    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark"
+    cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumDark" "${KVANTUM_DIR}/"
+    ok "Kvantum theme installed"
+
     # Sound theme (default: win11)
     info "Installing sound themes..."
     mkdir -p "${SOUND_DIR}"
@@ -249,8 +257,30 @@ apply_config() {
 
     # Icon theme (shared between light and dark)
     $kw --file kdeglobals --group Icons --key Theme "NeoWin"
+    # Kvantum: install if missing, then activate NeoWin dark theme
+    if ! command -v kvantummanager &>/dev/null; then
+        info "Installing Kvantum..."
+        if command -v pacman &>/dev/null; then
+            sudo pacman -S --needed --noconfirm kvantum 2>/dev/null \
+                || warn "Kvantum install failed — run: sudo pacman -S kvantum"
+        elif command -v apt-get &>/dev/null; then
+            sudo apt-get install -y qt5-style-kvantum qt6-style-kvantum 2>/dev/null \
+                || warn "Kvantum install failed — run: sudo apt-get install qt5-style-kvantum"
+        elif command -v dnf &>/dev/null; then
+            sudo dnf install -y kvantum 2>/dev/null \
+                || warn "Kvantum install failed — run: sudo dnf install kvantum"
+        else
+            warn "Unknown package manager — install Kvantum manually for your distro"
+        fi
+    fi
+    if command -v kvantummanager &>/dev/null; then
+        kvantummanager --set NeoWinKvantumDark
+        ok "Kvantum theme activated"
+    else
+        warn "kvantummanager not found — activate NeoWinKvantumDark manually in Kvantum Manager"
+    fi
     # Widget style
-    $kw --file kdeglobals --group KDE --key widgetStyle "Breeze"
+    $kw --file kdeglobals --group KDE --key widgetStyle "kvantum"
     # Window decoration (dark default — KDE switches this with the look-and-feel)
     $kw --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae.v2"
     $kw --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__WillowDarkBlur"
@@ -449,6 +479,7 @@ uninstall() {
     rm -f "${COLOR_DIR}/NeoWinDark.colors" "${COLOR_DIR}/NeoWinLight.colors"
     rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
     rm -rf "${SOUND_DIR}/neowin"
+    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark"
 
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true

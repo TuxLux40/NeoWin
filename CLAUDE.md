@@ -12,7 +12,7 @@ NeoWin is a self-contained KDE Plasma 6 theme repository that replicates a Windo
 - **Desktop**: KDE Plasma 6, Wayland
 - **Shell**: fish
 - **Monitors**: 3 screens
-- **Repo location**: `~/git/NeoWin/`
+- **Repo location**: `~/Projects/NeoWin/`
 
 ## Commands
 
