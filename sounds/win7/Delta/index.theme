@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin Win7 Delta
-Comment=Windows 7 Delta sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo

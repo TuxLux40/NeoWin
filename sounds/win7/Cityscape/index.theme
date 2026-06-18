@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin Win7 Cityscape
-Comment=Windows 7 Cityscape sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo

@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin Win7 Festival
-Comment=Windows 7 Festival sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo

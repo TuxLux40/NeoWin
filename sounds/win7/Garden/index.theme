@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin Win7 Garden
-Comment=Windows 7 Garden sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo

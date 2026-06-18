@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin Win10
-Comment=Windows 10 sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo

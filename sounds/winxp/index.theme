@@ -1,8 +1,0 @@
-[Sound Theme]
-Name=NeoWin WinXP
-Comment=Windows XP sound scheme for NeoWin
-Directories=stereo
-Inherits=freedesktop
-
-[stereo]
-OutputProfile=stereo
