@@ -79,7 +79,15 @@ _apply_laf_for_time() {
     elif command -v plasma-apply-lookandfeel &>/dev/null; then
         plasma-apply-lookandfeel --apply "$laf" 2>/dev/null || true
     fi
-    info "Applied ${laf} for current time of day"
+
+    # Switch Kvantum variant to match the LAF
+    local kvantum_theme="NeoWinKvantumDark"
+    [ "$is_day" = "true" ] && kvantum_theme="NeoWinKvantumLight"
+    if command -v kvantummanager &>/dev/null; then
+        kvantummanager --set "$kvantum_theme" 2>/dev/null || true
+    fi
+
+    info "Applied ${laf} / ${kvantum_theme} for current time of day"
 }
 
 # Ensure Night Color is enabled and has a working schedule.
@@ -213,12 +221,13 @@ install_assets() {
     # color scheme natively; a colors file would override SVG backgrounds globally
     rm -f "${PLASMA_THEME_DIR}/Utterly-Round/colors"
 
-    # Kvantum theme
-    info "Installing NeoWin Kvantum theme..."
+    # Kvantum themes (both variants for auto light/dark switching)
+    info "Installing NeoWin Kvantum themes..."
     mkdir -p "${KVANTUM_DIR}"
-    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark"
+    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark" "${KVANTUM_DIR}/NeoWinKvantumLight"
     cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumDark" "${KVANTUM_DIR}/"
-    ok "Kvantum theme installed"
+    cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumLight" "${KVANTUM_DIR}/"
+    ok "Kvantum themes installed (dark + light)"
 
     # Sound theme (default: win11)
     info "Installing sound themes..."
@@ -274,10 +283,9 @@ apply_config() {
         fi
     fi
     if command -v kvantummanager &>/dev/null; then
-        kvantummanager --set NeoWinKvantumDark
-        ok "Kvantum theme activated"
+        ok "Kvantum ready (variant set by _apply_laf_for_time below)"
     else
-        warn "kvantummanager not found — activate NeoWinKvantumDark manually in Kvantum Manager"
+        warn "kvantummanager not found — activate NeoWinKvantumDark or NeoWinKvantumLight manually in Kvantum Manager"
     fi
     # Widget style
     $kw --file kdeglobals --group KDE --key widgetStyle "kvantum"
@@ -479,7 +487,7 @@ uninstall() {
     rm -f "${COLOR_DIR}/NeoWinDark.colors" "${COLOR_DIR}/NeoWinLight.colors"
     rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
     rm -rf "${SOUND_DIR}/neowin"
-    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark"
+    rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark" "${KVANTUM_DIR}/NeoWinKvantumLight"
 
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true
