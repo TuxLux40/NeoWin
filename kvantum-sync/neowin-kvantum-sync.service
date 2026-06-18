@@ -1,0 +1,13 @@
+[Unit]
+Description=NeoWin Kvantum auto-sync (match Kvantum theme to KWin daylight)
+PartOf=graphical-session.target
+After=plasma-plasmashell.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/neowin-kvantum-sync
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

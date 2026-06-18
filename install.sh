@@ -14,6 +14,8 @@ LAF_DIR="${HOME}/.local/share/plasma/look-and-feel"
 CURSOR_DIR="${HOME}/.local/share/icons"
 SOUND_DIR="${HOME}/.local/share/sounds"
 KVANTUM_DIR="${HOME}/.config/Kvantum"
+BIN_DIR="${HOME}/.local/bin"
+SYSTEMD_USER_DIR="${HOME}/.config/systemd/user"
 
 # Colors for output
 RED='\033[0;31m'
@@ -47,27 +49,20 @@ _kread() {
     "$tool" --file "$file" --group "$group" --key "$key" 2>/dev/null || echo ""
 }
 
-# Apply the look-and-feel package that matches the current time of day.
-# For Mode=2 (fixed times) computes daylight directly from configured times —
-# KWin processes reconfigure asynchronously so its daylight flag may lag.
-# For other modes queries KWin NightLight; falls back to neowin-dark.
+# Apply the look-and-feel package that matches the current daylight state.
+# Trusts KWin NightLight's live `daylight` property as the single source of
+# truth — it already reflects the user's real schedule (geoclue, manual
+# location, or fixed times) including the active transition. We deliberately do
+# NOT parse kwinrc [Times]: KDE may store the schedule under other keys, leaving
+# stale values there (observed: [Times] SunsetStart=19:00 while KWin actually
+# transitions at 21:00), which made the installer fight the kded autoswitcher.
+# Falls back to neowin-dark only when there's no running KWin session to query.
 _apply_laf_for_time() {
     local laf="neowin-dark" is_day="false" qd=""
     command -v qdbus6 &>/dev/null && qd="qdbus6"
+    command -v qdbus &>/dev/null && [ -z "$qd" ] && qd="qdbus"
 
-    local mode
-    mode=$(_kread kwinrc NightColor Mode)
-
-    if [ "${mode:-0}" = "2" ]; then
-        # Fixed times: compute directly — don't trust KWin's async state
-        local sunrise sunset now
-        sunrise=$(_kread kwinrc Times SunriseStart)
-        sunset=$(_kread kwinrc Times SunsetStart)
-        sunrise="${sunrise:-07:00:00}"
-        sunset="${sunset:-19:00:00}"
-        now=$(date +%H:%M:%S)
-        [[ "$now" > "$sunrise" && "$now" < "$sunset" ]] && is_day="true"
-    elif [ -n "$qd" ]; then
+    if [ -n "$qd" ]; then
         is_day=$($qd org.kde.KWin.NightLight /org/kde/KWin/NightLight \
             org.kde.KWin.NightLight.daylight 2>/dev/null || echo "false")
     fi
@@ -229,6 +224,8 @@ install_assets() {
     cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumLight" "${KVANTUM_DIR}/"
     ok "Kvantum themes installed (dark + light)"
 
+    install_kvantum_sync
+
     # Sound theme (default: win11)
     info "Installing sound themes..."
     mkdir -p "${SOUND_DIR}"
@@ -247,6 +244,37 @@ install_assets() {
 
     echo ""
     ok "All assets installed successfully!"
+}
+
+# Install + enable the Kvantum auto-sync user service. KDE's look-and-feel
+# autoswitcher switches the color scheme/decoration at sunrise/sunset but cannot
+# switch the Kvantum theme; this watcher keeps Kvantum in sync with daylight.
+install_kvantum_sync() {
+    info "Installing Kvantum auto-sync service..."
+
+    if ! command -v dbus-monitor &>/dev/null; then
+        warn "dbus-monitor not found — skipping Kvantum auto-sync service."
+        warn "Kvantum won't follow automatic dark/light switches without it."
+        return
+    fi
+
+    mkdir -p "${BIN_DIR}" "${SYSTEMD_USER_DIR}"
+    cp -f "${SCRIPT_DIR}/kvantum-sync/neowin-kvantum-sync" "${BIN_DIR}/neowin-kvantum-sync"
+    chmod +x "${BIN_DIR}/neowin-kvantum-sync"
+    cp -f "${SCRIPT_DIR}/kvantum-sync/neowin-kvantum-sync.service" \
+        "${SYSTEMD_USER_DIR}/neowin-kvantum-sync.service"
+
+    if command -v systemctl &>/dev/null; then
+        systemctl --user daemon-reload 2>/dev/null || true
+        if systemctl --user enable --now neowin-kvantum-sync.service 2>/dev/null; then
+            ok "Kvantum auto-sync service enabled and started"
+        else
+            warn "Could not enable service via systemd — start manually:"
+            warn "  systemctl --user enable --now neowin-kvantum-sync.service"
+        fi
+    else
+        warn "systemctl not found — service installed but not enabled."
+    fi
 }
 
 apply_config() {
@@ -318,13 +346,15 @@ apply_config() {
         $qd org.kde.KWin /KWin reconfigure 2>/dev/null || true
     fi
 
-    # Apply the LAF that matches current time, then reload the kded autoswitcher
-    # so it re-evaluates immediately rather than waiting for the next transition
-    _apply_laf_for_time
+    # Reload kded autoswitcher first so it registers the new LAF keys; it may
+    # query daylight while KWin is still settling from the reconfigure above and
+    # apply the wrong variant — _apply_laf_for_time runs after and wins.
     if [ -n "$qd" ]; then
         $qd org.kde.kded6 /kded org.kde.kded6.unloadModule lookandfeelautoswitcher >/dev/null 2>&1 || true
         $qd org.kde.kded6 /kded org.kde.kded6.loadModule lookandfeelautoswitcher >/dev/null 2>&1 || true
     fi
+    # Apply the LAF + Kvantum variant that matches current time (authoritative last step)
+    _apply_laf_for_time
 
     ok "Configuration applied"
     ok "Automatic dark/light switching enabled"
@@ -370,67 +400,6 @@ wallpaper() {
     ok "Wallpaper set to ${provider} POTD on all desktops"
 }
 
-sounds() {
-    local pack="${1:-}"
-
-    if [ -z "$pack" ]; then
-        echo "Available sound packs:"
-        echo ""
-        echo "  win11    Windows 11 sounds (default)"
-        echo "  win10    Windows 10 sounds"
-        echo "  win7     Windows 7 sounds (13 sub-schemes: Afternoon, Calligraphy, ...)"
-        echo "  winxp    Windows XP sounds"
-        echo ""
-        echo "Usage: $(basename "$0") sounds <pack> [scheme]"
-        echo ""
-        echo "Examples:"
-        echo "  $(basename "$0") sounds win11"
-        echo "  $(basename "$0") sounds win7 Sonata"
-        echo ""
-        if [ -d "${SCRIPT_DIR}/sounds/win7" ]; then
-            echo "Win7 schemes: $(ls -d "${SCRIPT_DIR}/sounds/win7"/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ', ' | sed 's/,$//')"
-        fi
-        return
-    fi
-
-    local src=""
-    case "$pack" in
-        win11)
-            src="${SCRIPT_DIR}/sounds/win11-kde"
-            ;;
-        win10)
-            src="${SCRIPT_DIR}/sounds/win10"
-            ;;
-        win7)
-            local scheme="${2:-Sonata}"
-            src="${SCRIPT_DIR}/sounds/win7/${scheme}"
-            if [ ! -d "$src" ]; then
-                error "Win7 scheme '${scheme}' not found"
-                echo "Available: $(ls -d "${SCRIPT_DIR}/sounds/win7"/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ', ' | sed 's/,$//')"
-                return 1
-            fi
-            ;;
-        winxp)
-            src="${SCRIPT_DIR}/sounds/winxp"
-            ;;
-        *)
-            error "Unknown sound pack: $pack"
-            return 1
-            ;;
-    esac
-
-    info "Installing ${pack} sound pack..."
-    rm -rf "${SOUND_DIR}/neowin"
-    mkdir -p "${SOUND_DIR}/neowin/stereo"
-
-    cp -a "${src}/index.theme" "${SOUND_DIR}/neowin/"
-    cp -a "${src}/stereo" "${SOUND_DIR}/neowin/"
-    # Override the theme name so KDE always sees "neowin"
-    sed -i "s/^Name=.*/Name=NeoWin/" "${SOUND_DIR}/neowin/index.theme"
-
-    ok "Sound pack '${pack}' installed"
-    info "You may need to select 'neowin' in System Settings → Sounds if not already active"
-}
 
 refresh() {
     info "Clearing caches and restarting Plasma..."
@@ -489,6 +458,14 @@ uninstall() {
     rm -rf "${SOUND_DIR}/neowin"
     rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark" "${KVANTUM_DIR}/NeoWinKvantumLight"
 
+    # Kvantum auto-sync service
+    if command -v systemctl &>/dev/null; then
+        systemctl --user disable --now neowin-kvantum-sync.service 2>/dev/null || true
+    fi
+    rm -f "${SYSTEMD_USER_DIR}/neowin-kvantum-sync.service"
+    rm -f "${BIN_DIR}/neowin-kvantum-sync"
+    command -v systemctl &>/dev/null && systemctl --user daemon-reload 2>/dev/null || true
+
     if command -v kbuildsycoca6 &>/dev/null; then
         kbuildsycoca6 --noincremental 2>/dev/null || true
     fi
@@ -508,7 +485,6 @@ Commands:
   refresh              Clear caches and restart Plasma (apply theme changes live)
   restore-panel        Restore saved panel layout
   wallpaper [provider] Set Picture of the Day wallpaper on all desktops (default: bing)
-  sounds [pack]        List or switch sound packs (win11, win10, win7, winxp)
   uninstall            Remove all installed theme assets
   help                 Show this help message
 
@@ -516,8 +492,6 @@ Examples:
   $(basename "$0") install              # Install everything and configure KDE
   $(basename "$0") wallpaper            # Bing Picture of the Day on all desktops
   $(basename "$0") wallpaper apod       # NASA APOD instead
-  $(basename "$0") sounds               # List available sound packs
-  $(basename "$0") sounds win7 Sonata   # Switch to Win7 Sonata sounds
   $(basename "$0") restore-panel        # Restore the saved panel layout
   $(basename "$0") uninstall            # Remove all NeoWin assets
 
@@ -534,7 +508,6 @@ case "${1:-help}" in
         refresh
         echo ""
         info "Run '$(basename "$0") restore-panel' to restore the saved panel layout"
-        info "Run '$(basename "$0") sounds' to see available sound packs"
         ;;
     refresh|reload)
         refresh
@@ -544,9 +517,6 @@ case "${1:-help}" in
         ;;
     wallpaper)
         wallpaper "${2:-}"
-        ;;
-    sounds)
-        sounds "${2:-}" "${3:-}"
         ;;
     uninstall)
         uninstall

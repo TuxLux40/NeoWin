@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# NeoWin Kvantum auto-sync
+#
+# KDE's look-and-feel autoswitcher (kded lookandfeelautoswitcher) flips the
+# color scheme, cursors and window decoration at sunrise/sunset, but it cannot
+# switch the Kvantum theme — Kvantum is not part of a look-and-feel package and
+# the LAF `defaults` file cannot drive ~/.config/Kvantum/kvantum.kvconfig.
+#
+# This long-running watcher closes that gap: it listens for KWin NightLight
+# daylight transitions on the session bus and sets the matching Kvantum theme,
+# so the window widget style stays in sync with the rest of the desktop.
+set -uo pipefail
+
+DARK="NeoWinKvantumDark"
+LIGHT="NeoWinKvantumLight"
+
+qd=""
+command -v qdbus6 &>/dev/null && qd="qdbus6"
+command -v qdbus &>/dev/null && [ -z "$qd" ] && qd="qdbus"
+[ -n "$qd" ] || { echo "neowin-kvantum-sync: qdbus not found" >&2; exit 1; }
+command -v kvantummanager &>/dev/null || {
+    echo "neowin-kvantum-sync: kvantummanager not found" >&2; exit 1; }
+command -v dbus-monitor &>/dev/null || {
+    echo "neowin-kvantum-sync: dbus-monitor not found" >&2; exit 1; }
+
+last=""
+
+apply() {
+    local is_day theme
+    is_day=$("$qd" org.kde.KWin.NightLight /org/kde/KWin/NightLight \
+        org.kde.KWin.NightLight.daylight 2>/dev/null || echo "")
+    [ -n "$is_day" ] || return 0
+    if [ "$is_day" = "true" ]; then theme="$LIGHT"; else theme="$DARK"; fi
+    # Only act when the state actually changed — NightLight emits frequent
+    # property updates (e.g. temperature) during a transition.
+    [ "$theme" = "$last" ] && return 0
+    if kvantummanager --set "$theme" >/dev/null 2>&1; then
+        last="$theme"
+        echo "neowin-kvantum-sync: applied $theme (daylight=$is_day)"
+    fi
+}
+
+# Sync once at startup so we match the current state immediately.
+apply
+
+# React to every NightLight property change; apply() debounces via $last.
+dbus-monitor --session \
+    "type='signal',path='/org/kde/KWin/NightLight',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'" \
+    2>/dev/null | while read -r _; do
+        apply
+    done

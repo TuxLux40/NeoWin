@@ -21,11 +21,6 @@ All operations go through `./install.sh` (bash, `set -euo pipefail`). No build s
 ```bash
 ./install.sh install              # Copy assets to ~/.local/share + apply KDE config
 ./install.sh uninstall            # Remove all installed assets
-./install.sh sounds               # List sound packs
-./install.sh sounds win11         # Switch to Win11 sounds (default)
-./install.sh sounds win10         # Switch to Win10 sounds
-./install.sh sounds win7 Sonata   # Switch to Win7 sub-scheme (default sub-scheme: Sonata)
-./install.sh sounds winxp         # Switch to WinXP sounds
 ./install.sh restore-panel        # Copy panel-layout/ over ~/.config/plasma-org.kde.plasma.desktop-appletsrc
 ./install.sh wallpaper            # Set Picture of the Day wallpaper (default provider: bing)
 ./install.sh wallpaper apod       # Use NASA APOD provider instead
@@ -45,7 +40,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 
 ## Installer Internals
 
-`install.sh` has these functions: `install_assets`, `apply_config`, `sounds`, `restore_panel`, `wallpaper`, `reload_plasma`, `uninstall`.
+`install.sh` has these functions: `install_assets`, `apply_config`, `restore_panel`, `wallpaper`, `refresh`, `uninstall`.
 
 **`install_assets`** copies into XDG dirs:
 - `icons/win11-kde/` → `~/.local/share/icons/NeoWin` (on-disk dir renamed during copy; source dir keeps legacy name)
@@ -54,7 +49,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `plasma-theme/Utterly-Round` → `~/.local/share/plasma/desktoptheme/`
 - `color-schemes/NeoWin{Dark,Light}.colors` → `~/.local/share/color-schemes/`
 - `look-and-feel/neowin-{dark,light}/` → `~/.local/share/plasma/look-and-feel/`
-- `sounds/win11-kde/` → `~/.local/share/sounds/neowin` (sound theme dir is always `neowin`, content swapped by `sounds` command)
+- `sounds/win11-kde/` → `~/.local/share/sounds/neowin`
 - Runs `kbuildsycoca6 --noincremental` at the end.
 
 **`apply_config`** writes via `kwriteconfig6` (falls back to `kwriteconfig5`):
@@ -70,8 +65,6 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - Reloads KWin via `qdbus6 org.kde.KWin /KWin reconfigure`, then reloads the `lookandfeelautoswitcher` kded module so it re-evaluates immediately.
 - The dark window decoration is written directly into `kwinrc`; on light switch KDE overrides it from the `neowin-light` LAF package.
 
-**`sounds <pack> [scheme]`** wipes `~/.local/share/sounds/neowin`, copies `index.theme` + `stereo/` from the chosen source, then `sed`s `Name=...` → `Name=NeoWin` so KDE's sound theme ID stays constant. Invalid pack/scheme prints the available list and exits non-zero.
-
 **`restore_panel`** copies `panel-layout/plasma-org.kde.plasma.desktop-appletsrc` over `~/.config/plasma-org.kde.plasma.desktop-appletsrc`. Not called from `install`.
 
 **`wallpaper [provider]`** pokes plasmashell via `qdbus6 org.kde.plasmashell /PlasmaShell evaluateScript` to switch every desktop's wallpaper plugin to `org.kde.potd` (Picture of the Day) with the given provider (default `bing`; e.g. `apod`, `unsplash`, `noaa`, etc.). Requires Plasma to be running. Not called from `install`.
@@ -82,7 +75,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 
 ```
 NeoWin/
-├── install.sh                  # Main installer (install, uninstall, sounds, restore-panel)
+├── install.sh                  # Main installer (install, uninstall, restore-panel, wallpaper)
 ├── README.md
 ├── CLAUDE.md                   # This file
 ├── .gitignore
@@ -103,11 +96,7 @@ NeoWin/
 ├── look-and-feel/              # KDE look-and-feel packages for auto switching
 │   ├── neowin-dark/            # Id=neowin-dark, wires up dark cursor/colors/decoration
 │   └── neowin-light/           # Id=neowin-light, wires up light cursor/colors/decoration
-├── sounds/                     # 4 Windows sound packs, all mapped to freedesktop names
-│   ├── win11-kde/              # Win11 sounds (44 events), installed as default
-│   ├── win10/                  # Win10 sounds (41 events)
-│   ├── win7/                   # Win7 sounds (13 sub-schemes × 20 events each)
-│   └── winxp/                  # WinXP sounds (26 events)
+├── sounds/win11-kde/           # Win11 sound theme (44 events, freedesktop names)
 ├── panel-layout/               # Saved panel config (top bar + bottom taskbar)
 └── config/                     # Reference config snapshots (kwinrc, plasmarc, kdeglobals)
 ```
@@ -329,7 +318,7 @@ Config keys written to `kdeglobals [KDE]`:
 Configure via System Settings → Colors & Themes → Night Color. The installer does **not** store or hardcode location data.
 
 ### Sound Theme System
-Each sound pack has an `index.theme` and a `stereo/` directory with `.wav` files named after freedesktop sound event names (e.g., `dialog-error.wav`, `desktop-login.wav`). The `sounds` command swaps which pack is installed under `~/.local/share/sounds/neowin/`.
+`sounds/win11-kde/` has an `index.theme` and a `stereo/` directory with `.wav` files named after freedesktop sound event names (e.g., `dialog-error.wav`, `desktop-login.wav`). Installed as `~/.local/share/sounds/neowin/`. The `originals/` subdirectory holds the raw Windows `.wav` files; `stereo/` holds the freedesktop-mapped copies.
 
 ### Icon Theme
 Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) by zayronxio. Extended with symlinks for:
@@ -353,9 +342,8 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 
 - The icon directory is still named `icons/win11-kde/` on disk (historical artifact), but `index.theme` sets `Name=NeoWin` so KDE sees it as "NeoWin".
 - Color scheme files: `NeoWinDark.colors` / `NeoWinLight.colors`. Internal `[General] ColorScheme=` key must match the filename stem (that's the ID KDE writes into `kdeglobals`); `Name=` is the display label.
-- Win7 sound pack has 13 sub-schemes (Afternoon, Calligraphy, Characters, Cityscape, Delta, Festival, Garden, Heritage, Landscape, Quirky, Raga, Savanna, Sonata). Each has original `.wav` files plus a `stereo/` dir with freedesktop-mapped names.
-- Sound event names in `stereo/` map freedesktop event names → Windows `.wav` files. When swapping a pack, verify semantic alignment (e.g. `power-unplug` → Windows Hardware Remove, **not** Ringout; `device-added` → Hardware Insert). Historically some packs had ring-out stolen for power-unplug — check against the `originals/` dir when adding a new pack.
-- The repo is ~239MB due to bundled assets (icons are the biggest chunk at ~143MB).
+- Sound event names in `stereo/` map freedesktop event names → Win11 `.wav` files from `originals/`. Verify semantic alignment when editing (e.g. `power-unplug` → Windows Hardware Remove, **not** Ringout).
+- The repo is ~181MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
 - Auto dark/light switching requires a working Night Color schedule. `Mode=0` (automatic location) needs `geoclue` installed; without it, `daylight` stays `false` permanently and the autoswitcher never fires. Installer detects and prompts for this. Use `Mode=1` (manual lat/lon) or `Mode=2` (fixed times) as alternatives — both work without geoclue.
 - Lock screen clock color: see the "Lock screen always uses a dedicated QML override" section above (color scheme Complementary + LAF-shipped LockScreenUi.qml patch). The color-only attempt (commit 42548c4a) was insufficient on its own.
@@ -372,8 +360,7 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 1. **Portable theme backup**: Clone this repo on any KDE Plasma 6 system, run `install.sh install`, and get the exact same desktop appearance.
 2. **Complete coverage**: Every visible UI element should be themed — no fallback to generic KDE defaults that break the aesthetic.
 3. **Clean light/dark switching**: Both variants should look polished, not just "dark mode with wrong icons."
-4. **Sound customization**: Multiple Windows-era sound packs bundled so users can pick their favorite nostalgia.
-5. **Minimal dependencies**: Only requires standard KDE tools (`kwriteconfig6`, `lookandfeeltool`, `kbuildsycoca6`). No Python, no extra packages.
+4. **Minimal dependencies**: Only requires standard KDE tools (`kwriteconfig6`, `lookandfeeltool`, `kbuildsycoca6`). No Python, no extra packages.
 
 ## What Could Be Improved
 
