@@ -17,6 +17,12 @@
 		},
 		{
 			"path": "../kde-theming-skill"
+		},
+		{
+			"path": "../make-a-readme"
+		},
+		{
+			"path": "../windows-styling-guide"
 		}
 	],
 	"settings": {}

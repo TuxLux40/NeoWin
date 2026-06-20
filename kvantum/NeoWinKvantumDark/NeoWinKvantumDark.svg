@@ -680,46 +680,46 @@
 <path style="fill:#3A3A3A;fill-rule:evenodd" id="path1600" d="m 53,25 h 32 v -6 h -32 z"/>
 <path style="fill:url(#linearGradient1626);color:#000" id="path1602" d="M 85,18 H 53 v 1 h 32 z"/>
 </g>
-<path style="fill:#314047;fill-rule:evenodd" id="button-focused" d="M 54,20 V 52 H 86 V 20 Z"/>
+<path style="fill:#0078D4;fill-rule:evenodd" id="button-focused" d="M 54,20 V 52 H 86 V 20 Z"/>
 <g id="button-focused-left" transform="translate(1)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.725" id="path5064" d="M 53,52 V 20 h -5 v 32 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.725" id="path5064" d="M 53,52 V 20 h -5 v 32 z"/>
 <path style="fill:url(#linearGradient2050);color:#000;stroke-width:1.263" id="path5066" d="m 46,20 v 32 h 2 V 20 Z"/>
 </g>
 <g id="button-focused-top" transform="translate(1,-5)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.888" id="path1620" d="m 53.0001,25 h 32 v -6 h -32 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.888" id="path1620" d="m 53.0001,25 h 32 v -6 h -32 z"/>
 <path style="fill:url(#linearGradient7463);color:#000;stroke-width:.628" id="path1622" d="M 85,18 H 53 v 1 h 32 z"/>
 </g>
 <g id="button-focused-bottom" transform="translate(1,1)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.512" id="path1626" d="M 85,51 H 53 v 2 h 32 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.512" id="path1626" d="M 85,51 H 53 v 2 h 32 z"/>
 <path style="fill:url(#linearGradient7337);color:#000;stroke-width:1.403" id="path1628" d="M 53,58 H 85 V 53 H 53 Z"/>
 </g>
 <g id="button-focused-right" transform="matrix(-1,0,0,1,139,0)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.725" id="path1736" d="M 53,52 V 20 h -4 v 32 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.725" id="path1736" d="M 53,52 V 20 h -4 v 32 z"/>
 <path style="fill:url(#linearGradient1742);color:#000;stroke-width:1.263" id="path1738" d="m 46,20 v 32 h 3 V 20 Z"/>
 </g>
 <g id="button-focused-topright" transform="translate(1)">
-<path style="fill:#314047;fill-rule:evenodd" id="path1728" d="m 85,14 h 2 c 1.5,0 2,0.5 2,2 v 4 h -4 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd" id="path1728" d="m 85,14 h 2 c 1.5,0 2,0.5 2,2 v 4 h -4 z"/>
 <g style="color:#000" id="g1559">
 <path style="fill:url(#radialGradient1734)" id="path1730" d="m 85,13 h 7 v 7 h -3 v -4 c 0,-1.5 -0.5,-2 -2,-2 h -2 z"/>
 <path style="fill:url(#radialGradient1939)" id="path1937" d="m 85,13 h 7 v 7 h -3 v -4 c 0,-1.5 -0.5,-2 -2,-2 h -2 z"/>
 </g>
 </g>
 <g id="button-focused-bottomright" transform="translate(1)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.462" id="path1745" d="m 85,54 h 2 c 1.5,0 2,-0.5 2,-2 h -4 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.462" id="path1745" d="m 85,54 h 2 c 1.5,0 2,-0.5 2,-2 h -4 z"/>
 <g style="color:#000;stroke-width:.864" id="g1565">
 <path style="fill:url(#radialGradient1751)" id="path1747" d="m 85,59 h 7 v -7 h -3 c 0,1.5 -0.5,2 -2,2 h -2 z"/>
 <path style="opacity:.7;fill:url(#radialGradient1954)" id="path1950" d="m 85,59 h 7 v -7 h -3 c 0,1.5 -0.5,2 -2,2 h -2 z"/>
 </g>
 </g>
 <g id="button-focused-bottomleft" transform="translate(1)">
-<path style="fill:#314047;fill-rule:evenodd;stroke-width:.462" id="path1816" d="m 53,54 h -3 c -1.5,0 -2,-0.5 -2,-2 h 5 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd;stroke-width:.462" id="path1816" d="m 53,54 h -3 c -1.5,0 -2,-0.5 -2,-2 h 5 z"/>
 <g style="color:#000;stroke-width:.864" id="g1571">
 <path style="fill:url(#radialGradient1987)" id="path1818" d="m 53,59 h -7 v -7 h 2 c 0,1.5 0.5,2 2,2 h 3 z"/>
 <path style="opacity:.6;fill:url(#radialGradient2009)" id="path2007" d="m 53,59 h -7 v -7 h 2 c 0,1.5 0.5,2 2,2 h 3 z"/>
 </g>
 </g>
 <g id="button-focused-topleft">
-<path style="fill:#314047;fill-rule:evenodd" id="path5070" d="m 54,14 h -3 c -1.5,0 -2,0.5 -2,2 v 4 h 5 z"/>
+<path style="fill:#0078D4;fill-rule:evenodd" id="path5070" d="m 54,14 h -3 c -1.5,0 -2,0.5 -2,2 v 4 h 5 z"/>
 <g style="color:#000">
 <path style="fill:url(#radialGradient1933)" id="path5072" d="m 54,13 h -7 v 7 h 2 v -4 c 0,-1.5 0.5,-2 2,-2 h 3 z"/>
 <path style="fill:url(#radialGradient1562)" id="path1558" d="m 54,13 h -7 v 7 h 2 v -4 c 0,-1.5 0.5,-2 2,-2 h 3 z"/>

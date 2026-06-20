@@ -1,51 +1,94 @@
 #!/usr/bin/env bash
 # NeoWin Kvantum auto-sync
 #
-# KDE's look-and-feel autoswitcher (kded lookandfeelautoswitcher) flips the
-# color scheme, cursors and window decoration at sunrise/sunset, but it cannot
-# switch the Kvantum theme — Kvantum is not part of a look-and-feel package and
-# the LAF `defaults` file cannot drive ~/.config/Kvantum/kvantum.kvconfig.
+# KDE's look-and-feel autoswitcher flips color scheme, cursors and window
+# decoration at sunrise/sunset (and on manual LAF switches), but it cannot
+# switch the Kvantum theme — Kvantum is not part of a look-and-feel package
+# and the LAF `defaults` file cannot write ~/.config/Kvantum/kvantum.kvconfig.
 #
-# This long-running watcher closes that gap: it listens for KWin NightLight
-# daylight transitions on the session bus and sets the matching Kvantum theme,
-# so the window widget style stays in sync with the rest of the desktop.
+# This watcher closes that gap by monitoring two D-Bus signals:
+#   1. KWin NightLight PropertiesChanged  — automatic sunrise/sunset switches
+#   2. org.kde.KGlobalSettings.notifyChange — manual LAF / color-scheme switches
+#
+# On either signal it reads the active ColorScheme from kdeglobals (primary)
+# and falls back to the NightLight daylight property, then calls kvantummanager.
+# Running Qt apps (Dolphin, System Settings, etc.) are killed so they reload
+# the new Kvantum SVG on next open — Kvantum has no IPC reload mechanism.
 set -uo pipefail
 
 DARK="NeoWinKvantumDark"
 LIGHT="NeoWinKvantumLight"
 
 qd=""
-command -v qdbus6 &>/dev/null && qd="qdbus6"
-command -v qdbus &>/dev/null && [ -z "$qd" ] && qd="qdbus"
+command -v qdbus6  &>/dev/null && qd="qdbus6"
+command -v qdbus   &>/dev/null && [ -z "$qd" ] && qd="qdbus"
 [ -n "$qd" ] || { echo "neowin-kvantum-sync: qdbus not found" >&2; exit 1; }
 command -v kvantummanager &>/dev/null || {
     echo "neowin-kvantum-sync: kvantummanager not found" >&2; exit 1; }
 command -v dbus-monitor &>/dev/null || {
     echo "neowin-kvantum-sync: dbus-monitor not found" >&2; exit 1; }
 
+KDE_QT_APPS=(
+    dolphin systemsettings kcmshell6
+    kate kwrite okular gwenview ark konsole yakuake
+)
+
 last=""
 
 apply() {
-    local is_day theme
-    is_day=$("$qd" org.kde.KWin.NightLight /org/kde/KWin/NightLight \
-        org.kde.KWin.NightLight.daylight 2>/dev/null || echo "")
-    [ -n "$is_day" ] || return 0
-    if [ "$is_day" = "true" ]; then theme="$LIGHT"; else theme="$DARK"; fi
-    # Only act when the state actually changed — NightLight emits frequent
-    # property updates (e.g. temperature) during a transition.
+    # Primary: read ColorScheme from kdeglobals — updated by lookandfeeltool
+    # for both automatic (Night Color) and manual (Quick Settings / Global Theme) switches.
+    local cs theme
+    cs=$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null \
+         || grep -m1 '^ColorScheme=' ~/.config/kdeglobals 2>/dev/null | cut -d= -f2 \
+         || echo "")
+    case "$cs" in
+        NeoWinDark)  theme="$DARK"  ;;
+        NeoWinLight) theme="$LIGHT" ;;
+        *)
+            # Fallback: use Night Color daylight state (startup before first LAF switch,
+            # or when a non-NeoWin color scheme is active).
+            local is_day
+            is_day=$("$qd" org.kde.KWin.NightLight /org/kde/KWin/NightLight \
+                org.kde.KWin.NightLight.daylight 2>/dev/null || echo "")
+            [ -n "$is_day" ] || return 0
+            if [ "$is_day" = "true" ]; then theme="$LIGHT"; else theme="$DARK"; fi
+            ;;
+    esac
+
     [ "$theme" = "$last" ] && return 0
+
     if kvantummanager --set "$theme" >/dev/null 2>&1; then
         last="$theme"
-        echo "neowin-kvantum-sync: applied $theme (daylight=$is_day)"
+        echo "neowin-kvantum-sync: applied $theme (colorscheme=${cs:-daylight-fallback})"
+        # Kvantum reads its SVG once per process at startup — kill running Qt apps
+        # so they pick up the new style on next open.
+        for app in "${KDE_QT_APPS[@]}"; do
+            pkill -x "$app" 2>/dev/null || true
+        done
     fi
 }
 
-# Sync once at startup so we match the current state immediately.
+# Apply immediately at startup.
 apply
 
-# React to every NightLight property change; apply() debounces via $last.
+# Fan two D-Bus monitors into one FIFO so a single read loop handles both signals.
+FIFO=$(mktemp -u /tmp/neowin-kvantum-sync.XXXXXX)
+mkfifo "$FIFO"
+
+cleanup() { kill "${DBUS_PID1:-}" "${DBUS_PID2:-}" 2>/dev/null; rm -f "$FIFO"; }
+trap cleanup EXIT INT TERM
+
 dbus-monitor --session \
     "type='signal',path='/org/kde/KWin/NightLight',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged'" \
-    2>/dev/null | while read -r _; do
-        apply
-    done
+    2>/dev/null >"$FIFO" &
+DBUS_PID1=$!
+
+dbus-monitor --session \
+    "type='signal',interface='org.kde.KGlobalSettings',member='notifyChange'" \
+    2>/dev/null >"$FIFO" &
+DBUS_PID2=$!
+
+while read -r _ <"$FIFO"; do
+    apply
+done

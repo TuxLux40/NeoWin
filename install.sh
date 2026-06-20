@@ -406,7 +406,9 @@ refresh() {
 
     # Wipe all render/lookup caches that hold stale theme/icon/color data
     rm -f "${HOME}/.cache/plasma_theme_"*.kcache 2>/dev/null || true
+    # KDE6 renamed plasma-svgelements-* to ksvg-elements (single file, no suffix)
     rm -f "${HOME}/.cache/plasma-svgelements-"* 2>/dev/null || true
+    rm -f "${HOME}/.cache/ksvg-elements" 2>/dev/null || true
     rm -f "${HOME}/.cache/icon-cache.kcache" 2>/dev/null || true
     rm -f "${HOME}/.cache/ksycoca"*"_"* 2>/dev/null || true
     rm -rf "${HOME}/.cache/plasmashell" 2>/dev/null || true
@@ -440,6 +442,28 @@ refresh() {
     else
         warn "kquitapp6/kstart not found — restart plasmashell manually"
     fi
+
+    # Kvantum reads its SVG once per process at startup — kill running Qt apps so
+    # they pick up the new style on next open. Services that auto-restart are bounced.
+    local qt_apps=(
+        dolphin systemsettings kcmshell6 kate kwrite okular
+        gwenview ark filelight kfind spectacle partitionmanager
+        kmail kontact korganizer akregator kaddressbook
+        yakuake konsole
+    )
+    local killed=()
+    for app in "${qt_apps[@]}"; do
+        if pgrep -x "$app" >/dev/null 2>&1; then
+            pkill -x "$app" 2>/dev/null || true
+            killed+=("$app")
+        fi
+    done
+    [ ${#killed[@]} -gt 0 ] && ok "Killed Qt apps (reopen to see new style): ${killed[*]}"
+
+    # Bounce Qt-using KDE services that hold Kvantum style in memory
+    pkill -x kded6 2>/dev/null || true
+    setsid kded6 </dev/null >/dev/null 2>&1 &
+    disown 2>/dev/null || true
 
     ok "Refresh complete"
 }
