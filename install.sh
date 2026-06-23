@@ -246,9 +246,6 @@ install_assets() {
     ok "All assets installed successfully!"
 }
 
-# Install + enable the Kvantum auto-sync user service. KDE's look-and-feel
-# autoswitcher switches the color scheme/decoration at sunrise/sunset but cannot
-# switch the Kvantum theme; this watcher keeps Kvantum in sync with daylight.
 install_kvantum_sync() {
     info "Installing Kvantum auto-sync service..."
 
@@ -294,28 +291,7 @@ apply_config() {
 
     # Icon theme (shared between light and dark)
     $kw --file kdeglobals --group Icons --key Theme "NeoWin"
-    # Kvantum: install if missing, then activate NeoWin dark theme
-    if ! command -v kvantummanager &>/dev/null; then
-        info "Installing Kvantum..."
-        if command -v pacman &>/dev/null; then
-            sudo pacman -S --needed --noconfirm kvantum 2>/dev/null \
-                || warn "Kvantum install failed — run: sudo pacman -S kvantum"
-        elif command -v apt-get &>/dev/null; then
-            sudo apt-get install -y qt5-style-kvantum qt6-style-kvantum 2>/dev/null \
-                || warn "Kvantum install failed — run: sudo apt-get install qt5-style-kvantum"
-        elif command -v dnf &>/dev/null; then
-            sudo dnf install -y kvantum 2>/dev/null \
-                || warn "Kvantum install failed — run: sudo dnf install kvantum"
-        else
-            warn "Unknown package manager — install Kvantum manually for your distro"
-        fi
-    fi
-    if command -v kvantummanager &>/dev/null; then
-        ok "Kvantum ready (variant set by _apply_laf_for_time below)"
-    else
-        warn "kvantummanager not found — activate NeoWinKvantumDark or NeoWinKvantumLight manually in Kvantum Manager"
-    fi
-    # Widget style
+    # Widget style — Kvantum (provides Acrylic blur via translucent windows)
     $kw --file kdeglobals --group KDE --key widgetStyle "kvantum"
     # Window decoration (dark default — KDE switches this with the look-and-feel)
     $kw --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae.v2"
