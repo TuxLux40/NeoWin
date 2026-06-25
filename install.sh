@@ -185,9 +185,9 @@ install_assets() {
     cp -a "${SCRIPT_DIR}/look-and-feel/neowin-twilight" "${LAF_DIR}/"
     ok "Look-and-feel packages installed"
 
-    # Remove any stale plasma theme colors file — Utterly-Round follows the KDE
-    # color scheme natively; a colors file would override SVG backgrounds globally
-    rm -f "${PLASMA_THEME_DIR}/Utterly-Round/colors"
+    # Utterly-Round ships a dark `colors` file (copied above with the theme) so the
+    # Plasma shell — panel, popups, dashboard, logout — stays dark in BOTH used modes
+    # (dark + twilight) while app windows follow the KDE scheme. Do NOT delete it.
 
     # Kvantum themes (both variants for auto light/dark switching)
     info "Installing NeoWin Kvantum themes..."

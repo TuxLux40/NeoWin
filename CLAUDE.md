@@ -257,11 +257,18 @@ Utterly-Round's metadata declares `"follows all color scheme"` — its SVG files
 - `neowin-dark` and `neowin-twilight` also ship `contents/lockscreen/` — twilight copies from dark since the lockscreen is intentionally dark in twilight mode (no patch fight needed).
 - Maintenance: when Plasma updates the lockscreen QML, diff the stock files and re-apply the tiny patch to `neowin-light`, then re-copy to `neowin-dark` and `neowin-twilight` (and update this note with the Plasma version tested).
 
-**Do not add a `colors` file to `plasma-theme/Utterly-Round/`:**
-- Utterly-Round's SVGs adapt to the KDE color scheme automatically (FollowsColorScheme)
-- A `colors` file overrides **all** SVG CSS class colors simultaneously for both modes
-- Adding one with dark backgrounds makes the panel dark in light mode too
-- `install.sh` removes any stale `colors` file from the installed theme on every run
+**`plasma-theme/Utterly-Round/colors` ships dark ON PURPOSE (keeps the whole shell dark):**
+- Plasma 6 paints the **panel background** from `[Colors:Window]`, which is light in NeoWinTwilight.
+  Restarting plasmashell does not change this — it is by Plasma design. The dashboard/logout were
+  always dark (they use `Complementary`), but the panel background followed `Window` and stayed light.
+- The `colors` file overrides **all** Plasma-theme SVG colors (Layer B) to the dark palette for BOTH
+  modes. App windows (Layer A, from `kdeglobals`) are unaffected and stay light in twilight.
+- This is correct now: NeoWin only auto-switches between **dark** (night) and **twilight** (day), and
+  the panel/shell should be dark in *both*. The pure-light `neowin-light` is not auto-used.
+- The file is a copy of `NeoWinDark.colors`. `install.sh` installs it with the theme (does NOT delete it).
+- Tradeoff (accepted): desktop plasmoids with a widget background enabled get a dark bg + dark text in
+  twilight (text is Layer A `[Colors:Window]=26,26,26`). Pre-existing known limitation; panel text is
+  fine because panel plasmoids use `Complementary` (white). See Upstream Limitations.
 
 ### Common Changes Guide
 
@@ -278,7 +285,7 @@ Same path as panel — `widgets/background.svgz` uses the same CSS classes. Text
 Find which `colorSet` the plasmoid or its containment sets, then adjust the corresponding `[Colors:*]` group in the color schemes.
 
 **What NOT to do:**
-- Do not add `plasma-theme/Utterly-Round/colors` — it breaks light mode by darkening panel backgrounds
+- Do not delete `plasma-theme/Utterly-Round/colors` — it is intentional and keeps the panel/shell dark in twilight (see the dedicated note above)
 - Do not change `[Colors:Complementary]` in NeoWinLight or NeoWinTwilight to light values — breaks lock screen clock and panel text
 - Do not set `[Colors:Window].ForegroundNormal` to white in NeoWinLight or NeoWinTwilight — breaks all app window text
 
