@@ -117,7 +117,7 @@ interior=true
 interior.element=button
 indicator.size=8
 text.normal.color=#1A1A1Ab4
-text.focus.color=white
+text.focus.color=#1A1A1A
 text.press.color=#1A1A1Ab4
 text.toggle.color=#1A1A1A
 text.shadow=0
@@ -129,6 +129,7 @@ frame.expansion=0
 [PanelButtonTool]
 inherits=PanelButtonCommand
 text.normal.color=#1A1A1A96
+text.focus.color=#1A1A1A
 text.bold=true
 
 [ToolbarButton]
@@ -218,7 +219,7 @@ frame.right=3
 inherits=PanelButtonCommand
 frame.element=lineedit
 interior.element=lineedit
-interior=false
+interior=true
 text.margin.left=2
 text.margin.right=2
 
