@@ -57,7 +57,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `kdeglobals [Icons] Theme=NeoWin`, `[KDE] widgetStyle=kvantum`, `[Sounds] Theme=neowin`
 - `kwinrc [org.kde.kdecoration2] library=org.kde.kwin.aurorae.v2`, `theme=__aurorae__svg__WillowDarkBlur`, `BorderSize=NoSides`, `BorderSizeAuto=false`, `ButtonsOnLeft=M`
 - `kwinrc [TabBox] LayoutName=coverswitch` (Alt+Tab cover switch)
-- `kwinrc [Plugins] blurEnabled=true`, `[Effect-blur] BlurStrength=7`, `[NightColor] Active=true`
+- `kwinrc [Plugins] blurEnabled=true`, `[Effect-blur] BlurStrength=13`, `[NightColor] Active=true`
 - `plasmarc [Theme] name=Utterly-Round`
 - `ksplashrc [KSplash] Engine=none`, `Theme=None`
 - Calls `configure_night_color()` to validate the Night Color schedule (see Auto Dark/Light Switching below); only changes `Mode` if the schedule is broken (mode=0 + no transitions).
