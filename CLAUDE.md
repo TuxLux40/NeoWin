@@ -47,13 +47,13 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `aurorae/Willow{Dark,Light}Blur{,Alt}/` → `~/.local/share/aurorae/themes/`
 - `cursors/WinSur-{dark,white}-cursors/` → `~/.local/share/icons/`
 - `plasma-theme/Utterly-Round` → `~/.local/share/plasma/desktoptheme/`
-- `color-schemes/NeoWin{Dark,Light}.colors` → `~/.local/share/color-schemes/`
-- `look-and-feel/neowin-{dark,light}/` → `~/.local/share/plasma/look-and-feel/`
+- `color-schemes/NeoWin{Dark,Light,Twilight}.colors` → `~/.local/share/color-schemes/`
+- `look-and-feel/neowin-{dark,light,twilight}/` → `~/.local/share/plasma/look-and-feel/`
 - `sounds/win11-kde/` → `~/.local/share/sounds/neowin`
 - Runs `kbuildsycoca6 --noincremental` at the end.
 
 **`apply_config`** writes via `kwriteconfig6` (falls back to `kwriteconfig5`):
-- `kdeglobals [KDE] AutomaticLookAndFeel=true`, `DefaultDarkLookAndFeel=neowin-dark`, `DefaultLightLookAndFeel=neowin-light`
+- `kdeglobals [KDE] AutomaticLookAndFeel=true`, `DefaultDarkLookAndFeel=neowin-dark`, `DefaultLightLookAndFeel=neowin-twilight`
 - `kdeglobals [Icons] Theme=NeoWin`, `[KDE] widgetStyle=Breeze`, `[Sounds] Theme=neowin`
 - `kwinrc [org.kde.kdecoration2] library=org.kde.kwin.aurorae.v2`, `theme=__aurorae__svg__WillowDarkBlur`, `BorderSize=NoSides`, `BorderSizeAuto=false`, `ButtonsOnLeft=M`
 - `kwinrc [TabBox] LayoutName=coverswitch` (Alt+Tab cover switch)
@@ -61,9 +61,9 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - `plasmarc [Theme] name=Utterly-Round`
 - `ksplashrc [KSplash] Engine=none`, `Theme=None`
 - Calls `configure_night_color()` to validate the Night Color schedule (see Auto Dark/Light Switching below); only changes `Mode` if the schedule is broken (mode=0 + no transitions).
-- Detects current `daylight` state via `qdbus6 org.kde.KWin.NightLight` and applies `neowin-light` or `neowin-dark` accordingly (falls back to dark if no session).
+- Detects current `daylight` state via `qdbus6 org.kde.KWin.NightLight` and applies `neowin-twilight` or `neowin-dark` accordingly (falls back to dark if no session).
 - Reloads KWin via `qdbus6 org.kde.KWin /KWin reconfigure`, then reloads the `lookandfeelautoswitcher` kded module so it re-evaluates immediately.
-- The dark window decoration is written directly into `kwinrc`; on light switch KDE overrides it from the `neowin-light` LAF package.
+- The dark window decoration is written directly into `kwinrc`; on day switch KDE overrides it from the `neowin-twilight` LAF package (WillowLightBlur).
 
 **`restore_panel`** copies `panel-layout/plasma-org.kde.plasma.desktop-appletsrc` over `~/.config/plasma-org.kde.plasma.desktop-appletsrc`. Not called from `install`.
 
@@ -92,10 +92,12 @@ NeoWin/
 ├── plasma-theme/Utterly-Round/ # Plasma desktop theme (blur + transparency)
 ├── color-schemes/              # WillowBlur color schemes
 │   ├── NeoWinDark.colors       # Name=NeoWin Dark (WillowDarkBlur palette)
-│   └── NeoWinLight.colors      # Name=NeoWin Light (WillowLightBlur palette)
+│   ├── NeoWinLight.colors      # Name=NeoWin Light (WillowLightBlur palette, kept but not auto-switched)
+│   └── NeoWinTwilight.colors   # Name=NeoWin Twilight (light apps, dark Complementary for panel/dashboard)
 ├── look-and-feel/              # KDE look-and-feel packages for auto switching
 │   ├── neowin-dark/            # Id=neowin-dark, wires up dark cursor/colors/decoration
-│   └── neowin-light/           # Id=neowin-light, wires up light cursor/colors/decoration
+│   ├── neowin-light/           # Id=neowin-light, installed but not used by auto-switch
+│   └── neowin-twilight/        # Id=neowin-twilight, day variant: light apps + dark cursors, auto-switched at sunrise
 ├── sounds/win11-kde/           # Win11 sound theme (44 events, freedesktop names)
 ├── panel-layout/               # Saved panel config (top bar + bottom taskbar)
 └── config/                     # Reference config snapshots (kwinrc, plasmarc, kdeglobals)
@@ -246,14 +248,14 @@ Utterly-Round's metadata declares `"follows all color scheme"` — its SVG files
 **`[Colors:Complementary]` must be identical in both light and dark schemes** (dark bg + white text):
 - Lock screen renders on an always-dark blurred wallpaper — needs white text regardless of mode
 - Panel plasmoids inherit Complementary — same requirement
-- NeoWinLight and NeoWinDark both set: `BackgroundNormal=42,46,50` / `ForegroundNormal=252,252,252`
-- Never "fix" this to a light bg in NeoWinLight — it will break the panel or lock screen
+- NeoWinLight, NeoWinTwilight, and NeoWinDark all set: `BackgroundNormal=42,46,50` / `ForegroundNormal=252,252,252`
+- Never "fix" this to a light bg in any of the schemes — it will break the panel or lock screen
 
 **Lock screen always uses a dedicated QML override shipped in the LAF packages**
 - Even with correct `[Colors:Complementary]`, the stock `LockScreenUi.qml` + Breeze `Clock.qml` can fail to pick up light `textColor` for custom light LAFs (inheritance / timing / greeter context issues observed after the 2026-05 color scheme fix).
-- Both `neowin-light` and `neowin-dark` now ship `contents/lockscreen/` (full snapshot of the Plasma shell's lockscreen QMLs + 1-line patch in `LockScreenUi.qml` that does `Kirigami.Theme.textColor: "#fcfcfc"` right after setting `colorSet: Complementary`).
-- This guarantees white clock text on the dark blurred background in *both* modes. The patch is the only NeoWin change; other files are verbatim copies for a self-contained override.
-- Maintenance: when Plasma updates the lockscreen QML, diff the stock files and re-apply the tiny patch (and update this note with the Plasma version tested).
+- `neowin-light` ships `contents/lockscreen/` (full snapshot of the Plasma shell's lockscreen QMLs + 1-line patch in `LockScreenUi.qml` that does `Kirigami.Theme.textColor: "#fcfcfc"` right after setting `colorSet: Complementary`).
+- `neowin-dark` and `neowin-twilight` also ship `contents/lockscreen/` — twilight copies from dark since the lockscreen is intentionally dark in twilight mode (no patch fight needed).
+- Maintenance: when Plasma updates the lockscreen QML, diff the stock files and re-apply the tiny patch to `neowin-light`, then re-copy to `neowin-dark` and `neowin-twilight` (and update this note with the Plasma version tested).
 
 **Do not add a `colors` file to `plasma-theme/Utterly-Round/`:**
 - Utterly-Round's SVGs adapt to the KDE color scheme automatically (FollowsColorScheme)
@@ -264,7 +266,7 @@ Utterly-Round's metadata declares `"follows all color scheme"` — its SVG files
 ### Common Changes Guide
 
 **Changing accent color:**
-Edit `DecorationFocus`, `DecorationHover`, `ForegroundActive` in all `[Colors:*]` groups in both `NeoWinLight.colors` and `NeoWinDark.colors`. Current: `0,120,212` (Windows 11 blue) in light, `61,174,233` in dark.
+Edit `DecorationFocus`, `DecorationHover`, `ForegroundActive` in all `[Colors:*]` groups in `NeoWinDark.colors`, `NeoWinLight.colors`, and `NeoWinTwilight.colors`. Current: `0,120,212` (Windows 11 blue) in light/twilight, `61,174,233` in dark.
 
 **Making the panel look different:**
 The panel background comes from `plasma-theme/Utterly-Round/widgets/panel-background.svgz` via `.ColorScheme-Background` → `[Colors:Window].BackgroundNormal` in the active scheme. To change panel background: edit the SVG directly, or change `BackgroundNormal` in `[Colors:Window]` (affects all window backgrounds too).
@@ -277,8 +279,8 @@ Find which `colorSet` the plasmoid or its containment sets, then adjust the corr
 
 **What NOT to do:**
 - Do not add `plasma-theme/Utterly-Round/colors` — it breaks light mode by darkening panel backgrounds
-- Do not change `[Colors:Complementary]` in NeoWinLight to light values — breaks lock screen clock and panel text
-- Do not set `[Colors:Window].ForegroundNormal` to white in NeoWinLight — breaks all app window text
+- Do not change `[Colors:Complementary]` in NeoWinLight or NeoWinTwilight to light values — breaks lock screen clock and panel text
+- Do not set `[Colors:Window].ForegroundNormal` to white in NeoWinLight or NeoWinTwilight — breaks all app window text
 
 ---
 
@@ -296,7 +298,7 @@ Find which `colorSet` the plasmoid or its containment sets, then adjust the corr
 Config keys written to `kdeglobals [KDE]`:
 - `AutomaticLookAndFeel=true`
 - `DefaultDarkLookAndFeel=neowin-dark`
-- `DefaultLightLookAndFeel=neowin-light`
+- `DefaultLightLookAndFeel=neowin-twilight`
 
 **Critical dependency: KWin NightLight must have a working schedule.** The autoswitcher only fires when `daylight` transitions between `true` and `false`. If NightLight has no scheduled transitions (`scheduledTransitionDateTime=0`), the autoswitcher never fires and the theme is stuck. This happens when Night Color is in `Mode=0` (automatic location) but geoclue2 is not installed or not providing location data.
 
@@ -306,7 +308,7 @@ Config keys written to `kdeglobals [KDE]`:
    - If transitions are already scheduled → leaves Night Color untouched
    - If mode is non-zero (user set up location or fixed times) → leaves it untouched
    - If mode=0 with no transitions (geoclue broken) → prompts: install geoclue2, use fixed times 07:00/19:00, or skip
-3. Queries `org.kde.KWin.NightLight.daylight` via D-Bus and applies `neowin-light` or `neowin-dark` to match current time (falls back to dark if no session)
+3. Queries `org.kde.KWin.NightLight.daylight` via D-Bus and applies `neowin-twilight` or `neowin-dark` to match current time (falls back to dark if no session)
 4. Reloads the `lookandfeelautoswitcher` kded module so it re-evaluates immediately
 
 **Night Color modes** (stored in `kwinrc [NightColor] Mode`):
@@ -341,7 +343,7 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 ## Known Quirks / Gotchas
 
 - The icon directory is still named `icons/win11-kde/` on disk (historical artifact), but `index.theme` sets `Name=NeoWin` so KDE sees it as "NeoWin".
-- Color scheme files: `NeoWinDark.colors` / `NeoWinLight.colors`. Internal `[General] ColorScheme=` key must match the filename stem (that's the ID KDE writes into `kdeglobals`); `Name=` is the display label.
+- Color scheme files: `NeoWinDark.colors` / `NeoWinLight.colors` / `NeoWinTwilight.colors`. Internal `[General] ColorScheme=` key must match the filename stem (that's the ID KDE writes into `kdeglobals`); `Name=` is the display label.
 - Sound event names in `stereo/` map freedesktop event names → Win11 `.wav` files from `originals/`. Verify semantic alignment when editing (e.g. `power-unplug` → Windows Hardware Remove, **not** Ringout).
 - The repo is ~181MB due to bundled assets (icons are the biggest chunk at ~143MB).
 - `config/` directory contains reference snapshots, not actively used by the installer.
@@ -352,14 +354,14 @@ Based on [Windows-Eleven](https://github.com/ArcticLinguistics/Windows-Eleven) b
 
 - **Systray icons are monochrome by Plasma design.** Volume/network/bluetooth/brightness widgets in Plasma 6 hardcode `*-symbolic` icon names and force `ColorScheme-Text` tinting — colored icons bundled in NeoWin are not used for those widgets. Weather widget is an exception because it renders OpenWeatherMap PNGs directly. Fixing this would require patching Plasma widget sources upstream.
 - **Willow Blur aurorae titlebar flicker on Wayland.** The four bundled Willow variants all use the Blur suffix; KWin recomputes the behind-blur region on every titlebar repaint, which can cause flicker/jitter. This is a KWin+aurorae+blur interaction, not something NeoWin can patch. Workaround: switch to a non-blur aurorae theme (none bundled; would need to be added) or a different decoration engine.
-- **Desktop clock/widget text unreadable on dark wallpaper in light mode without widget background.** Desktop plasmoids use `colorSet: Kirigami.Theme.Window`, which maps to `[Colors:Window].ForegroundNormal = 26,26,26` in NeoWinLight — dark text. Without a widget background, this renders directly over the wallpaper. If the wallpaper is dark, the text is unreadable. Setting `ForegroundNormal` to white would break all app window text (same color group). The correct fix would require the clock widget QML to switch to `Kirigami.Theme.Complementary` (always white fg) when background is disabled — that's an upstream Plasma change. Workaround: enable the widget background.
-- **Application Dashboard and power/leave menu always dark even in light mode.** Both inherit `colorSet: Kirigami.Theme.Complementary` from the panel containment. NeoWin's `[Colors:Complementary]` is intentionally dark in both modes (required for panel text and lock screen — see NeoWin Invariants). Cannot be made light without patching the applet QML or splitting Complementary into panel-context vs popup-context. In Win11 these popups are light in light mode — this is a known visual fidelity gap. Upstream fix required; workaround: none. Dark mode is always correct; this only affects the light mode experience.
+- **Desktop clock/widget text unreadable on dark wallpaper without widget background (twilight mode).** Desktop plasmoids use `colorSet: Kirigami.Theme.Window` → `[Colors:Window].ForegroundNormal = 26,26,26` (dark text). Without a widget background on a dark wallpaper, the text is invisible. Workaround: enable the widget background, or use a light wallpaper in day mode. Setting `ForegroundNormal` to white would break all app window text.
+- **Application Dashboard and power/leave menu are dark in twilight mode — this is intentional.** Both inherit `colorSet: Kirigami.Theme.Complementary` from the panel containment. NeoWin's `[Colors:Complementary]` is intentionally dark (required for panel text and lock screen). The `neowin-twilight` LAF embraces this: panel/dashboard dark, app windows light. Making them light would require patching applet QML upstream.
 
 ## Goals & Intentions
 
 1. **Portable theme backup**: Clone this repo on any KDE Plasma 6 system, run `install.sh install`, and get the exact same desktop appearance.
 2. **Complete coverage**: Every visible UI element should be themed — no fallback to generic KDE defaults that break the aesthetic.
-3. **Clean light/dark switching**: Both variants should look polished, not just "dark mode with wrong icons."
+3. **Clean dark/twilight switching**: Both variants look polished. Twilight (day) = light app windows + dark panel/dashboard. Dark (night) = fully dark.
 4. **Minimal dependencies**: Only requires standard KDE tools (`kwriteconfig6`, `lookandfeeltool`, `kbuildsycoca6`). No Python, no extra packages.
 
 ## What Could Be Improved

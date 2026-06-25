@@ -50,7 +50,7 @@ _apply_laf_for_time() {
     is_day=$(qdbus6 org.kde.KWin.NightLight /org/kde/KWin/NightLight \
         org.kde.KWin.NightLight.daylight 2>/dev/null || echo "false")
 
-    [ "$is_day" = "true" ] && laf="neowin-light"
+    [ "$is_day" = "true" ] && laf="neowin-twilight"
 
     lookandfeeltool --apply "$laf" 2>/dev/null || true
 
@@ -173,14 +173,16 @@ install_assets() {
     mkdir -p "${COLOR_DIR}"
     cp -f "${SCRIPT_DIR}/color-schemes/NeoWinDark.colors" "${COLOR_DIR}/"
     cp -f "${SCRIPT_DIR}/color-schemes/NeoWinLight.colors" "${COLOR_DIR}/"
+    cp -f "${SCRIPT_DIR}/color-schemes/NeoWinTwilight.colors" "${COLOR_DIR}/"
     ok "Color schemes installed"
 
     # Look-and-feel packages
     info "Installing look-and-feel packages..."
     mkdir -p "${LAF_DIR}"
-    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
+    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light" "${LAF_DIR}/neowin-twilight"
     cp -a "${SCRIPT_DIR}/look-and-feel/neowin-dark" "${LAF_DIR}/"
     cp -a "${SCRIPT_DIR}/look-and-feel/neowin-light" "${LAF_DIR}/"
+    cp -a "${SCRIPT_DIR}/look-and-feel/neowin-twilight" "${LAF_DIR}/"
     ok "Look-and-feel packages installed"
 
     # Remove any stale plasma theme colors file — Utterly-Round follows the KDE
@@ -242,7 +244,7 @@ apply_config() {
     # Enable KDE's built-in automatic dark/light switching
     $kw --file kdeglobals --group KDE --key AutomaticLookAndFeel --type bool true
     $kw --file kdeglobals --group KDE --key DefaultDarkLookAndFeel neowin-dark
-    $kw --file kdeglobals --group KDE --key DefaultLightLookAndFeel neowin-light
+    $kw --file kdeglobals --group KDE --key DefaultLightLookAndFeel neowin-twilight
 
     # Icon theme (shared between light and dark)
     $kw --file kdeglobals --group Icons --key Theme "NeoWin"
@@ -283,7 +285,7 @@ apply_config() {
 
     ok "Configuration applied"
     ok "Automatic dark/light switching enabled"
-    info "KDE will switch between neowin-dark and neowin-light at sunrise/sunset"
+    info "KDE will switch between neowin-dark and neowin-twilight at sunrise/sunset"
     info "Adjust the schedule in System Settings → Night Color"
 }
 
@@ -381,8 +383,8 @@ uninstall() {
     done
     rm -rf "${CURSOR_DIR}/WinSur-dark-cursors" "${CURSOR_DIR}/WinSur-white-cursors"
     rm -rf "${PLASMA_THEME_DIR}/Utterly-Round"
-    rm -f "${COLOR_DIR}/NeoWinDark.colors" "${COLOR_DIR}/NeoWinLight.colors"
-    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light"
+    rm -f "${COLOR_DIR}/NeoWinDark.colors" "${COLOR_DIR}/NeoWinLight.colors" "${COLOR_DIR}/NeoWinTwilight.colors"
+    rm -rf "${LAF_DIR}/neowin-dark" "${LAF_DIR}/neowin-light" "${LAF_DIR}/neowin-twilight"
     rm -rf "${SOUND_DIR}/neowin"
     rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark" "${KVANTUM_DIR}/NeoWinKvantumLight"
 
