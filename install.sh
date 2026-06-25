@@ -401,21 +401,23 @@ usage() {
     cat << EOF
 NeoWin — Windows 11 style KDE Plasma theme
 
-Usage: $(basename "$0") <command>
+Usage: $(basename "$0") <command> [flags]
 
 Commands:
-  install              Install all theme assets, apply config, enable auto dark/light
+  install [--no-panel] Install all theme assets, apply config, enable auto dark/light
   refresh              Clear caches and restart Plasma (apply theme changes live)
-  restore-panel        Restore saved panel layout
   wallpaper [provider] Set Picture of the Day wallpaper on all desktops (default: bing)
   uninstall            Remove all installed theme assets
   help                 Show this help message
 
+Flags:
+  --no-panel           Skip restoring the saved panel layout (install only)
+
 Examples:
-  $(basename "$0") install              # Install everything and configure KDE
+  $(basename "$0") install              # Install everything, including panel layout
+  $(basename "$0") install --no-panel  # Install without touching the panel layout
   $(basename "$0") wallpaper            # Bing Picture of the Day on all desktops
   $(basename "$0") wallpaper apod       # NASA APOD instead
-  $(basename "$0") restore-panel        # Restore the saved panel layout
   $(basename "$0") uninstall            # Remove all NeoWin assets
 
 Dark/light switching is handled natively by KDE (System Settings → Colors & Themes).
@@ -426,17 +428,20 @@ EOF
 # Main
 case "${1:-help}" in
     install)
+        skip_panel=false
+        for arg in "${@:2}"; do
+            case "$arg" in
+                --no-panel) skip_panel=true ;;
+                *) error "Unknown flag: $arg"; usage; exit 1 ;;
+            esac
+        done
         install_assets
         apply_config
+        $skip_panel || restore_panel
         refresh
-        echo ""
-        info "Run '$(basename "$0") restore-panel' to restore the saved panel layout"
         ;;
     refresh|reload)
         refresh
-        ;;
-    restore-panel)
-        restore_panel
         ;;
     wallpaper)
         wallpaper "${2:-}"

@@ -11,7 +11,7 @@ Light and dark variants for automatic day/night switching, plus a MacOS/Gnome st
 [![Qt 6](https://img.shields.io/badge/Qt-6-41cd52.svg)](https://www.qt.io/)
 [![Wayland & X11](https://img.shields.io/badge/session-Wayland%20%7C%20X11-lightgrey.svg)](#requirements)
 
-[Quick Start](#quick-start) · [Components](#components) · [Sound Packs](#sound-packs) · [License](#license)
+[Quick Start](#quick-start) · [Components](#components) · [Icon Theme](#icon-theme-coverage) · [License](#license)
 
 </div>
 
@@ -29,7 +29,7 @@ All bundled components are free software; none were modified beyond packaging (t
 | **Plasma Style** | Utterly-Round (transparent + blur, follows color scheme) | ← same | himdek (Himprakash Deka) | [1901768](https://store.kde.org/p/1901768) · [GitHub](https://github.com/HimDek/Utterly-Round-Plasma-Style) | GPL-2.0-or-later |
 | **Color Scheme** | NeoWin Dark | NeoWin Light | TuxLux40 | this repo | GPL-3.0-or-later |
 | **Cursors** | WinSur Dark | WinSur White | yeyushengfan258 | [1423341](https://store.kde.org/p/1423341) · [1381566](https://store.kde.org/p/1381566) | GPL-3.0 |
-| **Sound Theme** | Win11 (default), Win10, Win7, WinXP available | ← same | Microsoft Corp. | various free download sites | see [disclaimer](#sound-samples-disclaimer) |
+| **Sound Theme** | Win11 | ← same | Microsoft Corp. | various free download sites | see [disclaimer](#sound-samples-disclaimer) |
 | **Splash Screen** | None | None | — | — | — |
 
 ---
@@ -50,34 +50,12 @@ cd ~/git/NeoWin
 ## Commands
 
 ```
-./install.sh install              # Install all assets + configure KDE
-./install.sh sounds               # List available sound packs
-./install.sh sounds win7 Sonata   # Switch to Win7 Sonata sounds
+./install.sh install              # Install all assets + configure KDE (panel included)
+./install.sh install --no-panel   # Install without touching the panel layout
+./install.sh refresh              # Clear caches + restart Plasma (apply changes live)
 ./install.sh wallpaper            # Bing Picture of the Day on all desktops
 ./install.sh wallpaper apod       # NASA APOD (or: unsplash, wcpotd, noaa, flickr)
-./install.sh restore-panel        # Restore the saved panel layout
 ./install.sh uninstall            # Remove everything
-```
-
----
-
-## Sound Packs
-
-Four sound packs are bundled. Win11 is installed by default.
-
-| Pack | Description |
-|---|---|
-| `win11` | Windows 11 sounds, all 44 freedesktop events mapped |
-| `win10` | Windows 10 sounds, 41 freedesktop events mapped |
-| `win7` | Windows 7 sounds with 13 sub-schemes: Afternoon, Calligraphy, Characters, Cityscape, Delta, Festival, Garden, Heritage, Landscape, Quirky, Raga, Savanna, Sonata |
-| `winxp` | Windows XP sounds, 26 freedesktop events mapped |
-
-Switch sound packs anytime:
-
-```bash
-./install.sh sounds win10             # Switch to Win10 sounds
-./install.sh sounds win7 Calligraphy  # Switch to Win7 Calligraphy scheme
-./install.sh sounds winxp             # Switch to WinXP sounds
 ```
 
 ---
@@ -97,11 +75,7 @@ The saved panel layout includes:
 - **Bottom panel**: Icon-only Task Manager
 
 > [!NOTE]
-> The panel layout is saved but **not applied automatically** during install to avoid overwriting your current setup. Run `./install.sh restore-panel` to apply it, then restart Plasma shell:
->
-> ```bash
-> kquitapp6 plasmashell && kstart plasmashell
-> ```
+> The panel layout is applied automatically during `install`. Pass `--no-panel` to skip it and leave your existing panels untouched.
 
 ---
 
@@ -125,8 +99,6 @@ The NeoWin icon theme is based on [Windows-Eleven](https://github.com/ArcticLing
 | **Desktop** | KDE Plasma 6 (Qt 6 / KF6) |
 | **Session** | Wayland or X11 |
 | **Tools** | `kwriteconfig6`, `kbuildsycoca6`, `lookandfeeltool` (or `plasma-apply-lookandfeel`), `qdbus6` — all shipped with Plasma 6 |
-
-The installer automatically falls back to KF5 equivalents (`kwriteconfig5`, `kbuildsycoca5`, `qdbus`) if the KF6 tools are missing, so it also runs on Plasma 5 systems.
 
 ---
 

@@ -14,10 +14,6 @@ location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][23][Applets][25]
-immutability=1
-plugin=org.kde.plasma.pager
-
 [Containments][23][Applets][27]
 immutability=1
 plugin=org.kde.plasma.marginsseparator
@@ -29,8 +25,8 @@ immutability=1
 lastScreen=0
 location=4
 plugin=org.kde.plasma.systemtray
-popupHeight=447
-popupWidth=447
+popupHeight=432
+popupWidth=432
 wallpaperplugin=org.kde.image
 
 [Containments][23][Applets][28][Applets][29]
@@ -114,6 +110,7 @@ immutability=1
 plugin=org.kde.plasma.volume
 
 [Containments][23][Applets][28][Applets][43][Configuration][General]
+currentTab=streams
 migrated=true
 
 [Containments][23][Applets][28][Applets][46]
@@ -124,26 +121,32 @@ plugin=org.kde.plasma.bluetooth
 immutability=1
 plugin=org.kde.plasma.mediacontroller
 
+[Containments][23][Applets][28][Applets][85]
+immutability=1
+plugin=org.kde.plasma.trash
+
 [Containments][23][Applets][28][ConfigDialog]
 DialogHeight=630
 DialogWidth=810
 
 [Containments][23][Applets][28][General]
-extraItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.bluetooth,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.plasma.kclock_1x2,org.kde.merkuro.contact.applet,org.kde.plasma.clipboard
+extraItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.merkuro.contact.applet,org.kde.plasma.clipboard,org.kde.plasma.bluetooth,org.kde.plasma.trash
 hiddenItems=org.kde.merkuro.contact.applet,Discover Notifier_org.kde.DiscoverNotifier,org.kde.plasma.clipboard
-knownItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.bluetooth,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.merkuro.contact.applet,org.kde.plasma.kclock_1x2
+knownItems=org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.volume,org.kde.kdeconnect,org.kde.plasma.bluetooth,org.kde.plasma.keyboardindicator,org.kde.plasma.weather,org.kde.merkuro.contact.applet
+shownItems=org.kde.plasma.bluetooth
 
 [Containments][23][Applets][38]
 immutability=1
 plugin=org.kde.plasma.digitalclock
 
 [Containments][23][Applets][38][Configuration]
-popupHeight=451
-popupWidth=810
+popupHeight=481
+popupWidth=840
 
 [Containments][23][Applets][38][Configuration][Appearance]
 dateFormat=longDate
 enabledCalendarPlugins=holidaysevents,pimevents
+firstDayOfWeek=1
 showSeconds=Always
 showWeekNumbers=true
 use24hFormat=2
@@ -160,47 +163,46 @@ plugin=org.kde.plasma.panelspacer
 immutability=1
 plugin=org.kde.plasma.panelspacer
 
-[Containments][23][Applets][49]
-immutability=1
-plugin=org.kde.plasma.kickerdash
-
-[Containments][23][Applets][49][Configuration]
-popupHeight=509
-popupWidth=647
-
-[Containments][23][Applets][49][Configuration][ConfigDialog]
-DialogHeight=540
-DialogWidth=720
-
-[Containments][23][Applets][49][Configuration][General]
-alphaSort=true
-favoritesPortedToKAstats=true
-icon=org.cachyos.hello
-recentOrdering=1
-systemFavorites=suspend\\,hibernate\\,reboot\\,shutdown
-
-[Containments][23][Applets][49][Configuration][Shortcuts]
-global=Alt+F1
-
 [Containments][23][Applets][51]
 immutability=1
 plugin=org.kde.plasma.appmenu
 
+[Containments][23][Applets][91]
+immutability=1
+plugin=org.kde.plasma.kickerdash
+
+[Containments][23][Applets][91][Configuration]
+popupHeight=520
+popupWidth=673
+
+[Containments][23][Applets][91][Configuration][ConfigDialog]
+DialogHeight=540
+DialogWidth=720
+
+[Containments][23][Applets][91][Configuration][General]
+alphaSort=true
+favoritesPortedToKAstats=true
+icon=distributor-logo-windows
+primaryActions=3
+recentOrdering=1
+showActionButtonCaptions=false
+systemFavorites=lock-screen\\,logout\\,save-session\\,switch-user\\,suspend\\,hibernate\\,reboot\\,shutdown
+
+[Containments][23][Applets][91][Configuration][Shortcuts]
+global=Alt+F1
+
 [Containments][23][General]
-AppletOrder=49;25;27;51;47;38;48;28
+AppletOrder=91;27;51;47;38;48;28
 
 [Containments][4][Wallpaper][org.kde.image][General]
 Image=/usr/share/wallpapers/cachyos-wallpapers/north.png
 PreviewImage=/usr/share/wallpapers/cachyos-wallpapers/north.png
 SlidePaths=/usr/share/wallpapers/
 
-[Containments][43]
-ItemGeometries-1920x1080=
+[Containments][83]
 ItemGeometries-2560x1440=
-ItemGeometries-800x1280=
 ItemGeometriesHorizontal=
-ItemGeometriesVertical=
-activityId=683e5433-2fd8-400c-be8f-87ecd7985b43
+activityId=5a430840-a781-4a81-9a3a-4e13766aabaf
 formfactor=0
 immutability=1
 lastScreen=0
@@ -208,111 +210,40 @@ location=0
 plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.potd
 
-[Containments][43][ConfigDialog]
+[Containments][83][ConfigDialog]
 DialogHeight=630
 DialogWidth=810
 
-[Containments][43][Wallpaper][org.kde.potd][General]
+[Containments][83][Wallpaper][org.kde.potd][General]
 Provider=bing
 
-[Containments][44]
-activityId=683e5433-2fd8-400c-be8f-87ecd7985b43
+[Containments][86]
+ItemGeometries-1280x800=
+ItemGeometriesHorizontal=
+activityId=5a430840-a781-4a81-9a3a-4e13766aabaf
 formfactor=0
 immutability=1
 lastScreen=1
 location=0
-plugin=org.kde.plasma.folder
-wallpaperplugin=org.kde.potd
+plugin=org.kde.desktopcontainment
+wallpaperplugin=org.kde.image
 
-[Containments][44][ConfigDialog]
+[Containments][86][ConfigDialog]
 DialogHeight=630
 DialogWidth=810
 
-[Containments][44][Wallpaper][org.kde.potd][General]
-FillMode=2
-Provider=wcpotd
+[Containments][86][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/wallpapers/cachyos-wallpapers/2002-03-02--Geburtstag_Helga_31.jpg
+SlidePaths=/usr/share/wallpapers/
 
-[Containments][45]
-ItemGeometries-1280x800=Applet-52:32,16,352,272,0;Applet-55:896,0,384,368,0;
-ItemGeometriesHorizontal=Applet-52:32,16,352,272,0;Applet-55:896,0,384,368,0;
-activityId=683e5433-2fd8-400c-be8f-87ecd7985b43
+[Containments][90]
+activityId=5a430840-a781-4a81-9a3a-4e13766aabaf
 formfactor=0
 immutability=1
 lastScreen=2
 location=0
 plugin=org.kde.plasma.folder
 wallpaperplugin=org.kde.image
-
-[Containments][45][Applets][52]
-immutability=1
-plugin=org.kde.plasma.digitalclock
-
-[Containments][45][Applets][52][Configuration]
-popupHeight=400
-popupWidth=560
-
-[Containments][45][Applets][52][Configuration][Appearance]
-dateDisplayFormat=BelowTime
-dateFormat=longDate
-enabledCalendarPlugins=astronomicalevents,holidaysevents,pimevents
-showWeekNumbers=true
-use24hFormat=2
-
-[Containments][45][Applets][52][Configuration][ConfigDialog]
-DialogHeight=630
-DialogWidth=810
-
-[Containments][45][Applets][55]
-immutability=1
-plugin=org.kde.plasma.weather
-
-[Containments][45][Applets][55][Configuration]
-UserBackgroundHints=ShadowBackground
-
-[Containments][45][Applets][55][Configuration][ConfigDialog]
-DialogHeight=630
-DialogWidth=810
-
-[Containments][45][Applets][55][Configuration][WeatherStation]
-placeDisplayName=Fischlaken (Essen), Nordrhein-Westfalen, DE
-placeInfo=place|Fischlaken (Essen), Nordrhein-Westfalen, DE|extra|DE0002737039;Essen
-provider=wettercom
-
-[Containments][45][ConfigDialog]
-DialogHeight=630
-DialogWidth=810
-
-[Containments][45][Wallpaper][net.dosowisko.PlasmaApplicationWallpaper][General]
-allowInput=true
-command=kitty btop
-
-[Containments][45][Wallpaper][org.kde.image][General]
-Image=file:///usr/share/wallpapers/cachyos-wallpapers/2002-03-02--Geburtstag_Helga_31.jpg
-SlidePaths=/home/oliver/.local/share/wallpapers/,/usr/share/wallpapers/
-
-[Containments][80]
-activityId=
-formfactor=2
-immutability=1
-lastScreen=0
-location=4
-plugin=org.kde.panel
-wallpaperplugin=org.kde.image
-
-[Containments][80][Applets][82]
-immutability=1
-plugin=org.kde.plasma.icontasks
-
-[Containments][80][Applets][82][Configuration][ConfigDialog]
-DialogHeight=630
-DialogWidth=810
-
-[Containments][80][Applets][82][Configuration][General]
-iconSpacing=0
-showOnlyCurrentDesktop=false
-
-[Containments][80][General]
-AppletOrder=82
 
 [ScreenMapping]
 itemsOnDisabledScreens=
