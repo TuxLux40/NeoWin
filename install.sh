@@ -265,7 +265,7 @@ apply_config() {
     $kw --file kwinrc --group TabBox --key LayoutName "coverswitch"
     # Blur
     $kw --file kwinrc --group Plugins --key blurEnabled --type bool true
-    $kw --file kwinrc --group Effect-blur --key BlurStrength "13"
+    $kw --file kwinrc --group Effect-blur --key BlurStrength "7"
     # Night Color — ensure enabled; handle schedule if broken
     configure_night_color "$kw"
     # Sound theme
