@@ -153,8 +153,8 @@
   <path id="menuitem-normal-top" d="m 193,493 h 8 v 4 h -8 z" opacity="0.1" style="fill:#ffffff" />
   <path id="menuitem-normal-bottom" d="m 193,505 h 8 v 4 h -8 z" opacity="0.1" style="fill:#ffffff" />
   <path id="menuitem-normal" d="m193 497h8v8h-8z" opacity=".1" style="fill:#ffffff" />
-  <path id="window-normal" d="m380 814.26h30v30h-30z" fill="#202020" style="opacity:0.75" />
-  <path id="window-normal-inactive" d="m412 814.26h30v30h-30z" fill="#2c2c2c" style="opacity:0.75" />
+  <path id="window-normal" d="m380 814.26h30v30h-30z" fill="#060606" style="opacity:0.78" />
+  <path id="window-normal-inactive" d="m412 814.26h30v30h-30z" fill="#111111" style="opacity:0.78" />
   <path id="tooltip-normal" d="m371.77 578.05h48v48h-48z" fill="#2b2b2b" fill-rule="evenodd" opacity=".8" />
   <g id="tooltip-normal-left" transform="translate(249.52 -125.7)">
     <path d="m116.26 703.75h6v48h-6z" fill="#2b2b2b" fill-rule="evenodd" opacity=".8" id="path389" />

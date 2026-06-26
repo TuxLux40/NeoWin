@@ -8,7 +8,7 @@ ColorScheme=NeoWinLight
 Theme=NeoWin
 
 [kdeglobals][KDE]
-widgetStyle=kvantum
+widgetStyle=Breeze
 
 [kwinrc][DesktopSwitcher]
 LayoutName=org.kde.breeze.desktop

@@ -12,8 +12,10 @@
 #
 # On either signal it reads the active ColorScheme from kdeglobals (primary)
 # and falls back to the NightLight daylight property, then calls kvantummanager.
-# Running Qt apps (Dolphin, System Settings, etc.) are killed so they reload
-# the new Kvantum SVG on next open — Kvantum has no IPC reload mechanism.
+# Stateless settings apps (systemsettings, kcmshell6) are restarted so their
+# previews pick up the new SVG. User-facing work apps (Kate, Konsole, Dolphin,
+# etc.) are NOT killed — they update colors live via KGlobalSettings and the
+# user can reopen them at their own convenience for full SVG refresh.
 set -uo pipefail
 
 DARK="NeoWinKvantumDark"
@@ -29,8 +31,7 @@ command -v dbus-monitor &>/dev/null || {
     echo "neowin-kvantum-sync: dbus-monitor not found" >&2; exit 1; }
 
 KDE_QT_APPS=(
-    dolphin systemsettings kcmshell6
-    kate kwrite okular gwenview ark konsole yakuake
+    systemsettings kcmshell6
 )
 
 last=""
@@ -43,8 +44,8 @@ apply() {
          || grep -m1 '^ColorScheme=' ~/.config/kdeglobals 2>/dev/null | cut -d= -f2 \
          || echo "")
     case "$cs" in
-        NeoWinDark)  theme="$DARK"  ;;
-        NeoWinLight) theme="$LIGHT" ;;
+        NeoWinDark)                 theme="$DARK"  ;;
+        NeoWinLight|NeoWinTwilight) theme="$LIGHT" ;;
         *)
             # Fallback: use Night Color daylight state (startup before first LAF switch,
             # or when a non-NeoWin color scheme is active).
@@ -61,11 +62,13 @@ apply() {
     if kvantummanager --set "$theme" >/dev/null 2>&1; then
         last="$theme"
         echo "neowin-kvantum-sync: applied $theme (colorscheme=${cs:-daylight-fallback})"
-        # Kvantum reads its SVG once per process at startup — kill running Qt apps
-        # so they pick up the new style on next open.
+        # Restart stateless settings apps so their previews use the new SVG.
         for app in "${KDE_QT_APPS[@]}"; do
             pkill -x "$app" 2>/dev/null || true
         done
+        # Notify the user; work apps (Kate, Konsole, Dolphin, etc.) are NOT killed.
+        notify-send "NeoWin" "Switched to ${theme} — reopen apps for full style refresh." \
+            --icon=preferences-desktop-theme --expire-time=6000 2>/dev/null || true
     fi
 }
 

@@ -54,12 +54,7 @@ _apply_laf_for_time() {
 
     lookandfeeltool --apply "$laf" 2>/dev/null || true
 
-    # Switch Kvantum variant to match the LAF
-    local kvantum_theme="NeoWinKvantumDark"
-    [ "$is_day" = "true" ] && kvantum_theme="NeoWinKvantumLight"
-    kvantummanager --set "$kvantum_theme" 2>/dev/null || true
-
-    info "Applied ${laf} / ${kvantum_theme} for current time of day"
+    info "Applied ${laf} for current time of day"
 }
 
 # Ensure Night Color is enabled and has a working schedule.
@@ -195,9 +190,7 @@ install_assets() {
     rm -rf "${KVANTUM_DIR}/NeoWinKvantumDark" "${KVANTUM_DIR}/NeoWinKvantumLight"
     cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumDark" "${KVANTUM_DIR}/"
     cp -a "${SCRIPT_DIR}/kvantum/NeoWinKvantumLight" "${KVANTUM_DIR}/"
-    ok "Kvantum themes installed (dark + light)"
-
-    install_kvantum_sync
+    ok "Kvantum themes installed (dark + light — inactive, widget style is Breeze)"
 
     # Sound theme (default: win11)
     info "Installing sound themes..."
@@ -248,8 +241,8 @@ apply_config() {
 
     # Icon theme (shared between light and dark)
     $kw --file kdeglobals --group Icons --key Theme "NeoWin"
-    # Widget style — Kvantum (provides Acrylic blur via translucent windows)
-    $kw --file kdeglobals --group KDE --key widgetStyle "kvantum"
+    # Widget style — Breeze
+    $kw --file kdeglobals --group KDE --key widgetStyle "Breeze"
     # Window decoration (dark default — KDE switches this with the look-and-feel)
     $kw --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae.v2"
     $kw --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__WillowDarkBlur"
@@ -323,21 +316,7 @@ wallpaper() {
     ok "Wallpaper set to ${provider} POTD on all desktops"
 }
 
-refresh() {
-    warn "Plasma shell will restart. Save your work now."
-    echo ""
-
-    # Plasma SVG render cache — the only cache that needs manual clearing.
-    # Everything else (color schemes, decorations, cursors) has no disk cache.
-    rm -rf "${HOME}/.cache/plasma"* 2>/dev/null || true
-
-    # Rebuild icon/service database so new icon files are discoverable
-    kbuildsycoca6 --noincremental 2>/dev/null || true
-
-    # Reload KWin in-process: picks up new decorations without killing the
-    # compositor. Never restart KWin on Wayland — it kills all Wayland windows.
-    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
-
+_kill_kvantum_apps() {
     # Kvantum has no reload signal — kill every user app that has the style
     # plugin loaded so they restart with the new theme. Skip session-critical
     # services that would break the desktop if killed.
@@ -359,19 +338,33 @@ refresh() {
         done < <(lsof "$kvantum_lib" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
         [ ${#killed[@]} -gt 0 ] && ok "Killed Kvantum apps (reopen to get new style): ${killed[*]}"
     fi
+}
 
+_restart_plasma() {
+    # Plasma SVG render cache — the only cache that needs manual clearing.
+    rm -rf "${HOME}/.cache/plasma"* 2>/dev/null || true
+    # Rebuild icon/service database so new icon files are discoverable
+    kbuildsycoca6 --noincremental 2>/dev/null || true
+    # Reload KWin in-process: picks up new decorations without killing the
+    # compositor. Never restart KWin on Wayland — it kills all Wayland windows.
+    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
     # Restart the KDE portal so file pickers in VS Code / Electron apps pick up
-    # the new Kvantum style. Correct systemd unit name is plasma-xdg-desktop-portal-kde.
+    # the new Kvantum style.
     systemctl --user restart plasma-xdg-desktop-portal-kde 2>/dev/null || true
-
     # Apply LAF + Kvantum variant for current time before plasmashell exits,
-    # so config is on disk when the new shell reads it
+    # so config is on disk when the new shell reads it.
     _apply_laf_for_time
-
     # Restart plasmashell last — official method per KDE docs
     plasmashell --replace >/dev/null 2>&1 &
     disown 2>/dev/null || true
     ok "Plasma shell restarting"
+}
+
+refresh() {
+    warn "Plasma shell will restart. Save your work now."
+    echo ""
+    _kill_kvantum_apps
+    _restart_plasma
 }
 
 uninstall() {
@@ -440,7 +433,7 @@ case "${1:-help}" in
         install_assets
         apply_config
         $skip_panel || restore_panel
-        refresh
+        _restart_plasma
         ;;
     refresh|reload)
         refresh
