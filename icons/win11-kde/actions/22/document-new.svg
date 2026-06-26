@@ -1,9 +1,10 @@
-<svg version="1.1" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
- <defs>
-  <style id="current-color-scheme" type="text/css">.ColorScheme-Text {
-        color:#363636;
-      }</style>
- </defs>
- <path class="ColorScheme-Text" d="m15.5 13c-1.933 0-3.5 1.567-3.5 3.5s1.567 3.5 3.5 3.5 3.5-1.567 3.5-3.5-1.567-3.5-3.5-3.5zm-0.5 1h1v2h2v1h-2v2h-1v-2h-2v-1h2z" fill="currentColor"/>
- <path d="m7 3c-1.662 0-3 1.338-3 3v10c0 1.662 1.338 3 3 3h4v-1h-4c-1.108 0-2-0.892-2-2v-10c0-1.108 0.892-2 2-2h5v5h5v3h1v-4l-5-5h-1zm6 1.4141 3.5859 3.5859h-3.5859z" class="ColorScheme-Text" fill="currentColor"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44.09 44.09" id="plus">
+  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #555555; }</style></defs>
+  <g>
+    <g>
+      <circle cx="22.04" cy="22.04" r="18.68" fill="none"></circle>
+      <path class="ColorScheme-Text" fill="currentColor" d="M22 4A18 18 0 1 1 4 22 18.07 18.07 0 0 1 22 4m0-4a22 22 0 1 0 22.09 22A22 22 0 0 0 22 0Z"></path>
+      <path fill="#0379d4" d="M32.26 20.34h-8.85v-8.85h-2.98v8.85h-8.86v2.98h8.86v8.85h2.98v-8.85h8.85v-2.98z"></path>
+    </g>
+  </g>
 </svg>

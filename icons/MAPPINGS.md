@@ -113,6 +113,23 @@ See the expanded section in CLAUDE.md (Icon Architecture → Sources & Databases
 - Upstream base for this theme: https://github.com/zayronxio/windows-eleven-skin (icons/ subdirectory)
 - Runtime tools on your machine: `kiconfinder6`, Icon Explorer (plasma-sdk), `strings` on KIO/Dolphin plugins, QT logging.
 
+## Case Study: Recent Files / Recent Locations (Dolphin sidebar)
+
+Names: `document-open-recent` (Recent Files), `folder-open-recent` + `folder-recent` (Recent Locations).
+
+Two non-obvious traps cost multiple sessions here:
+
+1. **The Windows-Eleven source set mislabels these.** The original `document-open-recent.svg` was a folder, `folder-open-recent.svg` was a monitor-with-clock. Always *render* a suspect icon (`rsvg-convert -w 48 file.svg -o /tmp/x.png`) and look at it — don't trust the filename.
+
+2. **`places/48` is NOT what the sidebar loads.** Dolphin requests the **plain** name (no `-symbolic`) at **22px**, and on a **2× (HiDPI) display** it pulls from the `@2x` dirs. By `index.theme` `Directories=` order, `actions/22` / `actions@2x/22` win over `places/48` for a plain 22px request. Editing only `places/48` (or `actions/16`) shows **zero** visible change. Fix = repoint **every** size/scale/context slot to one source:
+   `actions/{16,22,24}`, `actions@2x/{16,22,24}`, `places/{16,22,24,48}`, `places@2x/{16,22,24,48}` — all symlink → the one real colored file in `actions/16`.
+
+3. **Source art is raster `.ico`** (`~/Projects/WindowsIcons/Icons/objects/recent.ico`, `.../folders/recent.ico`). Theme is `.svg`-only, so wrap the extracted 256px PNG in an SVG: `<svg …><image width=256 height=256 xlink:href="data:image/png;base64,…"/></svg>`. Extract with `icotool -x --index=1 -o out.png file.ico`.
+
+4. **Beware `>` through a symlink** — it writes the *target*, silently clobbering shared icons (`mimes/48/text-x-generic.svg`, `places/16/folder-open.svg`). `rm` the symlink first, then write the real file.
+
+5. **Verifying:** `kbuildsycoca6` + plasmashell restart do **not** refresh a running Dolphin (it caches rendered icons in-process and in `~/.cache/icon-cache.kcache`). Must: redeploy → `rm ~/.cache/icon-cache.kcache` → `pkill dolphin` → relaunch → screenshot.
+
 ## Maintenance Tips
 
 - Every time you add mappings, run a quick audit with `kiconfinder6` on the affected names before and after `./install.sh`.
